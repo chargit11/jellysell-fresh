@@ -12,9 +12,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
 
-    // eBay credentials - use environment variables in production
-    const EBAY_CLIENT_ID = client_id || process.env.EBAY_CLIENT_ID;
-    const EBAY_CLIENT_SECRET = client_secret || process.env.EBAY_CLIENT_SECRET;
+    // eBay credentials
+    const EBAY_CLIENT_ID = client_id;
+    const EBAY_CLIENT_SECRET = client_secret;
 
     // Encode credentials for Basic Auth
     const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
