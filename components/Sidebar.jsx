@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   
   const navItems = [
@@ -16,15 +18,22 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6 flex items-center gap-3">
-        <img 
-          src="https://i.ibb.co/7tj8MqZM/Copy-of-LPS-FINESSE-1-removebg-preview.png" 
-          alt="JellySell" 
-          className="w-8 h-8 object-contain"
-        />
-        <span className="text-xl font-semibold text-gray-900">jellysell</span>
-        <button className="ml-auto text-gray-400 hover:text-gray-600">
+    <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300`}>
+      <div className="p-6 flex items-center">
+        {!collapsed && (
+          <div className="flex items-center gap-3 flex-1">
+            <img 
+              src="https://i.ibb.co/7tj8MqZM/Copy-of-LPS-FINESSE-1-removebg-preview.png" 
+              alt="JellySell" 
+              className="w-8 h-8 object-contain"
+            />
+            <span className="text-xl font-semibold text-gray-900">jellysell</span>
+          </div>
+        )}
+        <button 
+          onClick={() => setCollapsed(!collapsed)}
+          className={`text-gray-400 hover:text-gray-600 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -36,14 +45,23 @@ export default function Sidebar() {
           <Link
             key={item.path}
             href={item.path}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors relative ${
               pathname === item.path ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'
-            }`}
+            } ${collapsed ? 'justify-center' : ''}`}
           >
             <span className="text-lg">{item.icon}</span>
-            <span className="font-medium flex-1">{item.name}</span>
-            {item.badge && (
-              <span className="w-6 h-6 bg-purple-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+            {!collapsed && (
+              <>
+                <span className="font-medium flex-1">{item.name}</span>
+                {item.badge && (
+                  <span className="w-6 h-6 bg-purple-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </>
+            )}
+            {collapsed && item.badge && (
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 bg-purple-600 text-white text-xs font-semibold rounded-full flex items-center justify-center px-1">
                 {item.badge}
               </span>
             )}
@@ -52,9 +70,9 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 w-full">
+        <button className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 w-full ${collapsed ? 'justify-center' : ''}`}>
           <span>🚪</span>
-          <span className="font-medium">Log out</span>
+          {!collapsed && <span className="font-medium">Log out</span>}
         </button>
       </div>
     </div>
