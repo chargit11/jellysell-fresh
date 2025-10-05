@@ -13,7 +13,29 @@ export default function Listings() {
           </div>
         </div>
         <div className="p-8">
-          <p>Listings table will appear here</p>
+          <div className="bg-white rounded-lg border border-gray-200">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Product</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="px-6 py-4">
+                    <p className="font-medium">Sample Product</p>
+                    <p className="text-sm text-gray-500">ID: 12345</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">Live</span>
+                  </td>
+                  <td className="px-6 py-4 font-semibold">$7.95</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
