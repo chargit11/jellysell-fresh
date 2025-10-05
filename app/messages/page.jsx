@@ -9,7 +9,9 @@ export default function Messages() {
           <h1 className="text-3xl font-bold text-gray-900">Messages</h1>
         </div>
         <div className="p-8">
-          <p>Messages will appear here</p>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-gray-600">No messages yet. Connect your platforms to see messages.</p>
+          </div>
         </div>
       </div>
     </div>
