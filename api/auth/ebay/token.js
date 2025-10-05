@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+  console.log('EBAY TOKEN ENDPOINT HIT');
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -6,12 +8,10 @@ export default async function handler(req, res) {
   try {
     const { code, redirect_uri, client_id, client_secret } = req.body;
     
-    console.log('eBay token exchange request received');
-    console.log('Has code:', !!code);
-    console.log('Redirect URI:', redirect_uri);
+    console.log('Code exists:', !!code);
 
     if (!code) {
-      return res.status(400).json({ error: 'Authorization code required' });
+      return res.status(400).json({ error: 'No code' });
     }
 
     const credentials = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
@@ -30,14 +30,11 @@ export default async function handler(req, res) {
     });
 
     const responseText = await tokenResponse.text();
-    console.log('eBay API response status:', tokenResponse.status);
-    console.log('eBay API response:', responseText);
+    console.log('eBay status:', tokenResponse.status);
+    console.log('eBay response:', responseText);
 
     if (!tokenResponse.ok) {
-      return res.status(tokenResponse.status).json({ 
-        error: 'eBay token exchange failed',
-        details: responseText 
-      });
+      return res.status(tokenResponse.status).json({ error: responseText });
     }
 
     const tokens = JSON.parse(responseText);
@@ -45,15 +42,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      expires_in: tokens.expires_in,
-      token_type: tokens.token_type
+      expires_in: tokens.expires_in
     });
 
   } catch (error) {
-    console.error('eBay token exchange error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
+    console.error('Error:', error);
+    return res.status(500).json({ error: error.message });
   }
 }
