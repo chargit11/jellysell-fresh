@@ -1,3 +1,5 @@
+console.log('Received request:', { code: !!code, redirect_uri, client_id });
+
 // API endpoint to exchange eBay authorization code for access token
 export default async function handler(req, res) {
   // Only allow POST requests
