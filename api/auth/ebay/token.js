@@ -1,27 +1,21 @@
-console.log('Received request:', { code: !!code, redirect_uri, client_id });
-
-// API endpoint to exchange eBay authorization code for access token
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { code, redirect_uri, client_id, client_secret } = req.body;
+    
+    console.log('eBay token exchange request received');
+    console.log('Has code:', !!code);
+    console.log('Redirect URI:', redirect_uri);
 
     if (!code) {
-      return res.status(400).json({ error: 'Authorization code is required' });
+      return res.status(400).json({ error: 'Authorization code required' });
     }
 
-    // eBay credentials
-    const EBAY_CLIENT_ID = client_id;
-    const EBAY_CLIENT_SECRET = client_secret;
+    const credentials = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
 
-    // Encode credentials for Basic Auth
-    const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
-
-    // Exchange authorization code for access token
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
       method: 'POST',
       headers: {
@@ -35,18 +29,19 @@ export default async function handler(req, res) {
       })
     });
 
+    const responseText = await tokenResponse.text();
+    console.log('eBay API response status:', tokenResponse.status);
+    console.log('eBay API response:', responseText);
+
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('eBay token exchange failed:', errorText);
       return res.status(tokenResponse.status).json({ 
-        error: 'Failed to exchange authorization code',
-        details: errorText 
+        error: 'eBay token exchange failed',
+        details: responseText 
       });
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = JSON.parse(responseText);
 
-    // Return tokens to extension
     return res.status(200).json({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -55,7 +50,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error in eBay token exchange:', error);
+    console.error('eBay token exchange error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 
