@@ -9,7 +9,6 @@ export async function GET(request) {
   try {
     const { data, error } = await supabase
       .from('ebay_listings')
-      .select('*')
       .select('*');
 
     if (error) throw error;
