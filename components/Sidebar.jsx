@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,7 +17,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300`}>
+    <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 sticky top-0`}>
       <div className="p-6 flex items-center">
         {!collapsed && (
           <div className="flex items-center gap-3 flex-1">
@@ -40,7 +39,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         {navItems.map((item) => (
           <Link
             key={item.path}
