@@ -30,7 +30,7 @@ export default function Dashboard() {
               <div className="p-6">
                 <p className="text-sm text-gray-600 mb-2">Sessions</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold">31</p>
+                  <p className="text-3xl font-bold">0</p>
                   <span className="text-sm text-green-600">↗ 3%</span>
                 </div>
               </div>
