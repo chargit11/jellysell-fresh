@@ -18,7 +18,6 @@ export default async function handler(req, res) {
     console.log('Items count:', listings?.items?.length || 0);
     console.log('Orders count:', orders?.orders?.length || 0);
 
-    // Save listings from Finding API format
     if (listings?.items && listings.items.length > 0) {
       const listingsData = listings.items.map(item => ({
         listing_id: item.itemId?.[0] || 'unknown',
