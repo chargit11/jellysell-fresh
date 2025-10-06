@@ -10,7 +10,7 @@ export async function GET(request) {
     const { data, error } = await supabase
       .from('ebay_listings')
       .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
 
     if (error) throw error;
 
