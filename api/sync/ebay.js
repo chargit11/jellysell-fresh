@@ -12,19 +12,24 @@ export default async function handler(req, res) {
 
   try {
     const { listings, orders } = req.body;
-
+    
     console.log('Received eBay data');
-    console.log('Listings count:', listings?.inventoryItems?.length || 0);
+    console.log('Listings data:', JSON.stringify(listings).substring(0, 200));
+    console.log('Items count:', listings?.items?.length || 0);
     console.log('Orders count:', orders?.orders?.length || 0);
 
-    // Save listings to Supabase
-    if (listings?.inventoryItems && listings.inventoryItems.length > 0) {
-      const listingsData = listings.inventoryItems.map(item => ({
-        listing_id: item.sku || item.offerId,
-        title: item.product?.title || 'Untitled',
-        price: parseFloat(item.availability?.price?.value || 0),
-        quantity: parseInt(item.availability?.shipToLocationAvailability?.quantity || 0)
+    // Save listings from Finding API format
+    if (listings?.items && listings.items.length > 0) {
+      const listingsData = listings.items.map(item => ({
+        listing_id: item.itemId?.[0] || 'unknown',
+        title: item.title?.[0] || 'Untitled',
+        price: parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0),
+        image: item.galleryURL?.[0] || null,
+        platform: 'ebay',
+        url: item.viewItemURL?.[0] || null
       }));
+
+      console.log('Saving listings:', JSON.stringify(listingsData, null, 2));
 
       const { error: listingsError } = await supabase
         .from('ebay_listings')
@@ -38,32 +43,11 @@ export default async function handler(req, res) {
       console.log('Saved', listingsData.length, 'listings');
     }
 
-    // Save orders to Supabase
-    if (orders?.orders && orders.orders.length > 0) {
-      const ordersData = orders.orders.map(order => ({
-        order_id: order.orderId,
-        buyer_name: order.buyer?.username || 'Unknown',
-        total: parseFloat(order.pricingSummary?.total?.value || 0),
-        status: order.orderFulfillmentStatus || 'UNKNOWN'
-      }));
-
-      const { error: ordersError } = await supabase
-        .from('ebay_orders')
-        .upsert(ordersData, { onConflict: 'order_id' });
-
-      if (ordersError) {
-        console.error('Orders save error:', ordersError);
-        throw ordersError;
-      }
-
-      console.log('Saved', ordersData.length, 'orders');
-    }
-
     return res.status(200).json({
       success: true,
       message: 'eBay data synced successfully',
       stats: {
-        listings: listings?.inventoryItems?.length || 0,
+        listings: listings?.items?.length || 0,
         orders: orders?.orders?.length || 0
       }
     });
