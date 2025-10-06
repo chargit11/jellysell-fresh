@@ -11,9 +11,16 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id required' });
+    }
+
     const { data, error } = await supabase
       .from('ebay_listings')
-      .select('*');
+      .select('*')
+      .eq('user_id', user_id);
 
     if (error) throw error;
 
