@@ -11,15 +11,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { listings, orders } = req.body;
+    const { listings, orders, user_id } = req.body;
     
     console.log('Received eBay data');
-    console.log('Listings data:', JSON.stringify(listings).substring(0, 200));
+    console.log('User ID:', user_id);
     console.log('Items count:', listings?.items?.length || 0);
-    console.log('Orders count:', orders?.orders?.length || 0);
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id required' });
+    }
 
     if (listings?.items && listings.items.length > 0) {
       const listingsData = listings.items.map(item => ({
+        user_id: user_id,
         listing_id: item.itemId?.[0] || 'unknown',
         title: item.title?.[0] || 'Untitled',
         price: parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0),
