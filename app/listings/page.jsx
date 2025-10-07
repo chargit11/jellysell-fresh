@@ -74,14 +74,40 @@ export default function Listings() {
     }
   };
 
-  const handleStockSave = async (listing) => { 
-    setListings(listings.map(l => 
-      l.listing_id === listing.listing_id 
-        ? { ...l, quantity: parseInt(newStock) } 
-        : l
-    )); 
-    setEditingStock(null); 
-    setNewStock(''); 
+  const handleStockSave = async (listing) => {
+    const user_id = localStorage.getItem('user_id');
+    
+    try {
+      const response = await fetch('/api/ebay/update-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: listing.listing_id,
+          quantity: parseInt(newStock),
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to update quantity: ' + data.error);
+        return;
+      }
+
+      // Update local state only if API call succeeded
+      setListings(listings.map(l => 
+        l.listing_id === listing.listing_id 
+          ? { ...l, quantity: parseInt(newStock) }
+          : l
+      ));
+
+      setEditingStock(null);
+      setNewStock('');
+      alert('Quantity updated successfully on eBay!');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
   };
 
   const calculateQuality = (listing) => { 
