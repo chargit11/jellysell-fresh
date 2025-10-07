@@ -20,7 +20,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="flex items-center gap-3 flex-1">
             <img 
-              src="https://i.ibb.co/7tj8MqZM/Copy-of-LPS-FINESSE-1-removebg-preview.png" 
+              src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" 
               alt="JellySell" 
               className="w-8 h-8 object-contain"
             />
