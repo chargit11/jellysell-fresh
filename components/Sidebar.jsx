@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -21,10 +22,12 @@ export default function Sidebar() {
       <div className="p-6 flex items-center">
         {!collapsed && (
           <div className="flex items-center gap-3 flex-1">
-            <img 
-              src="https://i.ibb.co/7tj8MqZM/Copy-of-LPS-FINESSE-1-removebg-preview.png" 
+            <Image 
+              src="/jellysell-logo.png" 
               alt="JellySell" 
-              className="w-8 h-8 object-contain"
+              width={32} 
+              height={32}
+              className="w-8 h-8"
             />
             <span className="text-xl font-semibold text-gray-900">jellysell</span>
           </div>
