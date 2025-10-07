@@ -13,6 +13,12 @@ export default async function handler(req, res) {
   try {
     const { listing_id, price, user_id } = req.body;
 
+    console.log('Received request:', { listing_id, price, user_id });
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' });
+    }
+
     // Get user's eBay token from database
     const { data: tokenData, error } = await supabase
       .from('user_tokens')
@@ -21,8 +27,10 @@ export default async function handler(req, res) {
       .eq('platform', 'ebay')
       .single();
 
+    console.log('Token lookup result:', { tokenData, error });
+
     if (error || !tokenData) {
-      throw new Error('No eBay token found for user');
+      return res.status(401).json({ error: 'No eBay token found for user. Please connect your eBay account first.' });
     }
 
     const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
@@ -52,7 +60,7 @@ export default async function handler(req, res) {
     console.log('eBay ReviseItem response:', xmlResponse);
 
     if (!response.ok || xmlResponse.includes('<Ack>Failure</Ack>')) {
-      throw new Error('Failed to update eBay listing: ' + xmlResponse);
+      return res.status(500).json({ error: 'Failed to update eBay listing: ' + xmlResponse });
     }
 
     return res.status(200).json({ success: true, message: 'Price updated on eBay' });
@@ -60,4 +68,4 @@ export default async function handler(req, res) {
     console.error('Update price error:', error);
     return res.status(500).json({ error: error.message });
   }
-}'
+}
