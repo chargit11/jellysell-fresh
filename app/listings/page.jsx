@@ -7,18 +7,25 @@ export default function Listings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/listings')
-      .then(res => res.json())
-      .then(data => {
-        console.log('Fetched listings:', data);
-        setListings(data.listings || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        setLoading(false);
-      });
-  }, []);
+  const user_id = localStorage.getItem('user_id');
+  
+  if (!user_id) {
+    window.location.href = '/login';
+    return;
+  }
+
+  fetch(`/api/listings?user_id=${user_id}`)
+    .then(res => res.json())
+    .then(data => {
+      console.log('Fetched listings:', data);
+      setListings(data.listings || []);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      setLoading(false);
+    });
+}, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
