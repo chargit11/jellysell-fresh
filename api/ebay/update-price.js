@@ -41,6 +41,7 @@ export default async function handler(req, res) {
   <Item>
     <ItemID>${listing_id}</ItemID>
     <StartPrice>${price}</StartPrice>
+    <BuyItNowPrice>${price}</BuyItNowPrice>
   </Item>
 </ReviseItemRequest>`;
 
