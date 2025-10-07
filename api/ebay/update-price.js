@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No eBay token found for user. Please connect your eBay account first.' });
     }
 
+    // For fixed-price listings, only use StartPrice (which is the actual selling price)
     const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
 <ReviseItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
   <RequesterCredentials>
@@ -41,7 +42,6 @@ export default async function handler(req, res) {
   <Item>
     <ItemID>${listing_id}</ItemID>
     <StartPrice>${price}</StartPrice>
-    <BuyItNowPrice>${price}</BuyItNowPrice>
   </Item>
 </ReviseItemRequest>`;
 
