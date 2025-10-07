@@ -27,6 +27,7 @@ export default async function handler(req, res) {
         listing_id: item.itemId?.[0] || 'unknown',
         title: item.title?.[0] || 'Untitled',
         price: parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0),
+        quantity: parseInt(item.quantity?.[0] || 1),
         image: item.galleryURL?.[0] || null,
         platform: 'ebay',
         url: item.viewItemURL?.[0] || null
@@ -54,7 +55,6 @@ export default async function handler(req, res) {
         orders: orders?.orders?.length || 0
       }
     });
-
   } catch (error) {
     console.error('Error syncing eBay data:', error);
     return res.status(500).json({ 
