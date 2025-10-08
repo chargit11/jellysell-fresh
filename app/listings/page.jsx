@@ -9,6 +9,7 @@ export default function Listings() {
   const [editingStock, setEditingStock] = useState(null);
   const [newPrice, setNewPrice] = useState('');
   const [newStock, setNewStock] = useState('');
+  const [selectedListings, setSelectedListings] = useState([]);
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -59,7 +60,6 @@ export default function Listings() {
         return;
       }
 
-      // Update local state only if API call succeeded
       setListings(listings.map(l => 
         l.listing_id === listing.listing_id 
           ? { ...l, price: parseFloat(newPrice) }
@@ -95,7 +95,6 @@ export default function Listings() {
         return;
       }
 
-      // Update local state only if API call succeeded
       setListings(listings.map(l => 
         l.listing_id === listing.listing_id 
           ? { ...l, quantity: parseInt(newStock) }
@@ -118,6 +117,22 @@ export default function Listings() {
     if (score >= 80) return { label: 'Good', color: 'green' }; 
     if (score >= 50) return { label: 'Fair', color: 'yellow' }; 
     return { label: 'Poor', color: 'red' }; 
+  };
+
+  const toggleSelectListing = (listingId) => {
+    setSelectedListings(prev => 
+      prev.includes(listingId) 
+        ? prev.filter(id => id !== listingId)
+        : [...prev, listingId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedListings.length === listings.length) {
+      setSelectedListings([]);
+    } else {
+      setSelectedListings(listings.map(l => l.listing_id));
+    }
   };
 
   return (
@@ -152,12 +167,22 @@ export default function Listings() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Platform</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Quality</th>
+                    <th className="px-6 py-3 text-left w-12">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedListings.length === listings.length}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -166,46 +191,46 @@ export default function Listings() {
                     return (
                       <tr key={idx} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
+                          <input 
+                            type="checkbox"
+                            checked={selectedListings.includes(listing.listing_id)}
+                            onChange={() => toggleSelectListing(listing.listing_id)}
+                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
                             {listing.image ? (
                               <img 
                                 src={listing.image} 
                                 alt={listing.title} 
-                                className="w-16 h-16 object-cover rounded-lg border border-gray-200" 
+                                className="w-12 h-12 object-cover rounded border border-gray-200" 
                               />
                             ) : (
-                              <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
                                 <span className="text-gray-400 text-xs">No image</span>
                               </div>
                             )}
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900 text-base">{listing.title}</p>
-                              <p className="text-sm text-gray-500 mt-1">ID: {listing.listing_id}</p>
-                              {listing.url && (
-                                <a 
-                                  href={listing.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-xs text-purple-600 hover:text-purple-800 hover:underline mt-1 inline-block"
-                                >
-                                  View on eBay →
-                                </a>
-                              )}
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">{listing.title}</p>
+                              <p className="text-xs text-gray-500">ID: {listing.listing_id}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 uppercase">
-                            {listing.platform}
-                          </span>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-600">
+                            <p>0 sold</p>
+                            <p className="text-gray-400">0 views</p>
+                            <p className="text-gray-400">$0</p>
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                             <span className="text-sm text-gray-700">Live</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {editingStock === listing.listing_id ? (
                             <input 
                               type="number" 
@@ -220,22 +245,22 @@ export default function Listings() {
                                 }
                               }} 
                               autoFocus 
-                              className="w-20 px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                              className="w-16 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
                             />
                           ) : (
                             <span 
-                              className="text-gray-900 font-medium cursor-pointer hover:text-purple-600 transition-colors" 
+                              className="text-sm text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
                               onDoubleClick={() => handleStockDoubleClick(listing)} 
                               title="Double-click to edit"
                             >
-                              {listing.quantity || 1}
+                              {listing.quantity || 0}
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {editingPrice === listing.listing_id ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">$</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-500 text-sm">$</span>
                               <input 
                                 type="number" 
                                 value={newPrice} 
@@ -249,12 +274,12 @@ export default function Listings() {
                                   }
                                 }} 
                                 autoFocus 
-                                className="w-24 px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                                className="w-20 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
                               />
                             </div>
                           ) : (
                             <span 
-                              className="text-lg font-bold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
+                              className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
                               onDoubleClick={() => handlePriceDoubleClick(listing)} 
                               title="Double-click to edit"
                             >
@@ -262,19 +287,16 @@ export default function Listings() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span 
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                quality.color === 'green' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : quality.color === 'yellow' 
-                                  ? 'bg-yellow-100 text-yellow-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {quality.label}
+                        <td className="px-4 py-4">
+                          <div className="flex gap-1">
+                            <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                              EB
                             </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-700">{quality.label}</span>
                             <div className="flex gap-1">
                               <div className={`w-2 h-2 rounded-full ${
                                 quality.color === 'green' 
@@ -290,6 +312,20 @@ export default function Listings() {
                                 quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
                               }`}></div>
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <button className="p-1.5 hover:bg-gray-100 rounded">
+                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button className="p-1.5 hover:bg-gray-100 rounded">
+                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                              </svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
