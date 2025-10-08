@@ -13,6 +13,8 @@ export default async function handler(req, res) {
   try {
     const { messages, user_id } = req.body;
 
+    console.log('Received messages sync request:', { user_id, messageCount: messages?.length });
+
     if (!user_id) {
       return res.status(400).json({ error: 'user_id required' });
     }
@@ -25,14 +27,22 @@ export default async function handler(req, res) {
         subject: msg.subject || 'No subject',
         body: msg.body || '',
         read: msg.read || false,
+        created_at: msg.createdAt || new Date().toISOString(),
         platform: 'ebay'
       }));
+
+      console.log('Saving messages:', messagesData.length);
 
       const { error } = await supabase
         .from('ebay_messages')
         .upsert(messagesData, { onConflict: 'message_id' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Messages saved successfully');
     }
 
     return res.status(200).json({
