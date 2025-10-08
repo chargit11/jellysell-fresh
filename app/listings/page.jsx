@@ -211,10 +211,8 @@ export default function Listings() {
     setOpenMenuId(openMenuId === listingId ? null : listingId);
   };
 
-  // Filter listings based on search and active tab
   const filteredListings = listings.filter(listing => {
     const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-    // For now, all listings are "live" - you can add status filtering later
     return matchesSearch;
   });
 
@@ -222,7 +220,7 @@ export default function Listings() {
     { id: 'all', label: 'All', count: listings.length },
     { id: 'live', label: 'Live', count: listings.length },
     { id: 'reviewing', label: 'Reviewing', count: 0 },
-    { id: 'violation', label: 'Violation', count: 0 },
+    { id: 'violation', label: 'Violation', count: 0},
     { id: 'deactivated', label: 'Deactivated', count: 0 },
     { id: 'draft', label: 'Draft', count: 0 },
     { id: 'deleted', label: 'Deleted', count: 0 },
@@ -252,7 +250,6 @@ export default function Listings() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="px-8 pt-6 border-b border-gray-200">
           <div className="flex gap-6">
             {tabs.map(tab => (
@@ -271,7 +268,6 @@ export default function Listings() {
           </div>
         </div>
 
-        {/* Search and Filters */}
         <div className="px-8 pt-6 pb-4 flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,11 +434,13 @@ export default function Listings() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex gap-1">
-                            <img 
-                              src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
-                              alt="eBay" 
-                              className="h-5 w-auto"
-                            />
+                            <div className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded border border-gray-200">
+                              <img 
+                                src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
+                                alt="eBay" 
+                                className="w-4 h-auto"
+                              />
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -519,7 +517,6 @@ export default function Listings() {
                 </tbody>
               </table>
 
-              {/* Footer with pagination */}
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   Total: {filteredListings.length}
