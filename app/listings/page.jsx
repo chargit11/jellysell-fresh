@@ -11,6 +11,8 @@ export default function Listings() {
   const [newStock, setNewStock] = useState('');
   const [selectedListings, setSelectedListings] = useState([]);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -134,7 +136,6 @@ export default function Listings() {
         return;
       }
 
-      // Remove from local state
       setListings(listings.filter(l => l.listing_id !== listingId));
       setOpenMenuId(null);
       alert('Listing deleted successfully!');
@@ -172,7 +173,6 @@ export default function Listings() {
         return;
       }
 
-      // Remove from local state
       setListings(listings.filter(l => !selectedListings.includes(l.listing_id)));
       setSelectedListings([]);
       alert(`${selectedListings.length} listing(s) deleted successfully!`);
@@ -200,16 +200,33 @@ export default function Listings() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedListings.length === listings.length) {
+    if (selectedListings.length === filteredListings.length) {
       setSelectedListings([]);
     } else {
-      setSelectedListings(listings.map(l => l.listing_id));
+      setSelectedListings(filteredListings.map(l => l.listing_id));
     }
   };
 
   const toggleMenu = (listingId) => {
     setOpenMenuId(openMenuId === listingId ? null : listingId);
   };
+
+  // Filter listings based on search and active tab
+  const filteredListings = listings.filter(listing => {
+    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
+    // For now, all listings are "live" - you can add status filtering later
+    return matchesSearch;
+  });
+
+  const tabs = [
+    { id: 'all', label: 'All', count: listings.length },
+    { id: 'live', label: 'Live', count: listings.length },
+    { id: 'reviewing', label: 'Reviewing', count: 0 },
+    { id: 'violation', label: 'Violation', count: 0 },
+    { id: 'deactivated', label: 'Deactivated', count: 0 },
+    { id: 'draft', label: 'Draft', count: 0 },
+    { id: 'deleted', label: 'Deleted', count: 0 },
+  ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -234,16 +251,64 @@ export default function Listings() {
             </button>
           </div>
         </div>
-        <div className="p-8">
+
+        {/* Tabs */}
+        <div className="px-8 pt-6 border-b border-gray-200">
+          <div className="flex gap-6">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label} {tab.count > 0 && <span className="text-gray-400">{tab.count}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="px-8 pt-6 pb-4 flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search products"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+            Category
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+            Sort
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-8 pb-8">
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
               <p className="mt-4 text-gray-600">Loading listings...</p>
             </div>
-          ) : listings.length === 0 ? (
+          ) : filteredListings.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 text-lg">
-                No listings found. Sync your eBay account using the Chrome extension.
+                {searchQuery ? 'No listings found matching your search.' : 'No listings found. Sync your eBay account using the Chrome extension.'}
               </p>
             </div>
           ) : (
@@ -254,7 +319,7 @@ export default function Listings() {
                     <th className="px-6 py-3 text-left w-12">
                       <input 
                         type="checkbox" 
-                        checked={selectedListings.length === listings.length}
+                        checked={selectedListings.length === filteredListings.length && filteredListings.length > 0}
                         onChange={toggleSelectAll}
                         className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
@@ -270,7 +335,7 @@ export default function Listings() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {listings.map((listing, idx) => { 
+                  {filteredListings.map((listing, idx) => { 
                     const quality = calculateQuality(listing); 
                     return (
                       <tr key={idx} className="hover:bg-gray-50 transition-colors">
@@ -451,6 +516,33 @@ export default function Listings() {
                   })}
                 </tbody>
               </table>
+
+              {/* Footer with pagination */}
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Total: {filteredListings.length}
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <span className="text-sm text-gray-700">1</span>
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <select className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>50/Page</option>
+                    <option>100/Page</option>
+                    <option>200/Page</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
         </div>
