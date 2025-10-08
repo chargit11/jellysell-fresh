@@ -232,8 +232,8 @@ export default function Listings() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1">
-        <div className="px-8 pt-8 pb-6 border-b border-gray-200 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Listings</h1>
+        <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">Listings</h1>
           <div className="flex gap-3">
             {selectedListings.length > 0 && (
               <button 
@@ -438,9 +438,11 @@ export default function Listings() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex gap-1">
-                            <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
-                              EB
-                            </span>
+                            <img 
+                              src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
+                              alt="eBay" 
+                              className="h-5 w-auto"
+                            />
                           </div>
                         </td>
                         <td className="px-4 py-4">
