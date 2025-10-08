@@ -45,18 +45,6 @@ export default function Messages() {
     );
   };
 
-  const platformColors = {
-    'ebay': 'bg-blue-600',
-    'etsy': 'bg-orange-500',
-    'depop': 'bg-red-500',
-    'poshmark': 'bg-purple-600',
-    'mercari': 'bg-blue-500',
-  };
-
-  const getPlatformInitial = (platform) => {
-    return platform ? platform.charAt(0).toUpperCase() : 'E';
-  };
-
   const filteredMessages = messages.filter(msg => {
     const matchesSearch = msg.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          msg.sender?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -90,10 +78,10 @@ export default function Messages() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1">
-          <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex-1 flex flex-col">
+          <div className="px-8 py-6 flex items-center justify-between">
             <div className="relative flex-1 max-w-xl">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -101,14 +89,16 @@ export default function Messages() {
                 placeholder="Search your messages"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            <select className="ml-4 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <select className="ml-4 px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
               <option>Auto-reply</option>
               <option>Manual reply</option>
             </select>
           </div>
+
+          <div className="border-t border-gray-200"></div>
 
           {/* Action bar */}
           <div className="px-8 py-4 border-b border-gray-200 flex items-center gap-4">
@@ -166,7 +156,7 @@ export default function Messages() {
           </div>
 
           {/* Messages list */}
-          <div className="px-8 py-4">
+          <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="text-center py-12">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
@@ -177,11 +167,11 @@ export default function Messages() {
                 <p className="text-gray-600 text-lg">No messages found.</p>
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
+              <div className="bg-white">
                 {filteredMessages.map((message, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-4 px-8 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -190,8 +180,12 @@ export default function Messages() {
                       className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${platformColors[message.platform] || 'bg-blue-600'}`}>
-                      {getPlatformInitial(message.platform)}
+                    <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
+                        alt="eBay" 
+                        className="w-6 h-auto"
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
