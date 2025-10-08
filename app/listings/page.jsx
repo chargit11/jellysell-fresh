@@ -10,6 +10,7 @@ export default function Listings() {
   const [newPrice, setNewPrice] = useState('');
   const [newStock, setNewStock] = useState('');
   const [selectedListings, setSelectedListings] = useState([]);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -133,6 +134,10 @@ export default function Listings() {
     } else {
       setSelectedListings(listings.map(l => l.listing_id));
     }
+  };
+
+  const toggleMenu = (listingId) => {
+    setOpenMenuId(openMenuId === listingId ? null : listingId);
   };
 
   return (
@@ -295,20 +300,20 @@ export default function Listings() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-start gap-1">
                             <span className="text-sm text-gray-700">{quality.label}</span>
                             <div className="flex gap-1">
-                              <div className={`w-2 h-2 rounded-full ${
+                              <div className={`w-4 h-2 rounded-full ${
                                 quality.color === 'green' 
                                   ? 'bg-green-500' 
                                   : quality.color === 'yellow' 
                                   ? 'bg-yellow-500' 
                                   : 'bg-gray-300'
                               }`}></div>
-                              <div className={`w-2 h-2 rounded-full ${
+                              <div className={`w-4 h-2 rounded-full ${
                                 quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
                               }`}></div>
-                              <div className={`w-2 h-2 rounded-full ${
+                              <div className={`w-4 h-2 rounded-full ${
                                 quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
                               }`}></div>
                             </div>
@@ -321,11 +326,42 @@ export default function Listings() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
-                            <button className="p-1.5 hover:bg-gray-100 rounded">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                              </svg>
-                            </button>
+                            <div className="relative">
+                              <button 
+                                onClick={() => toggleMenu(listing.listing_id)}
+                                className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-0.5"
+                              >
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                              </button>
+                              
+                              {openMenuId === listing.listing_id && (
+                                <>
+                                  <div 
+                                    className="fixed inset-0 z-10" 
+                                    onClick={() => setOpenMenuId(null)}
+                                  ></div>
+                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      View Details
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Edit Listing
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Duplicate
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Deactivate
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
+                                      Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
