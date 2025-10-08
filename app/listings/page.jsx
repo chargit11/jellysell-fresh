@@ -110,6 +110,77 @@ export default function Listings() {
     }
   };
 
+  const handleDeleteListing = async (listingId) => {
+    if (!confirm('Are you sure you want to delete this listing?')) {
+      return;
+    }
+
+    const user_id = localStorage.getItem('user_id');
+
+    try {
+      const response = await fetch('/api/listings/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: listingId,
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to delete listing: ' + data.error);
+        return;
+      }
+
+      // Remove from local state
+      setListings(listings.filter(l => l.listing_id !== listingId));
+      setOpenMenuId(null);
+      alert('Listing deleted successfully!');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedListings.length === 0) {
+      alert('Please select listings to delete');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedListings.length} listing(s)?`)) {
+      return;
+    }
+
+    const user_id = localStorage.getItem('user_id');
+
+    try {
+      const response = await fetch('/api/listings/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_ids: selectedListings,
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to delete listings: ' + data.error);
+        return;
+      }
+
+      // Remove from local state
+      setListings(listings.filter(l => !selectedListings.includes(l.listing_id)));
+      setSelectedListings([]);
+      alert(`${selectedListings.length} listing(s) deleted successfully!`);
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
   const calculateQuality = (listing) => { 
     let score = 0; 
     if (listing.title && listing.title.length > 10) score += 33; 
@@ -147,6 +218,14 @@ export default function Listings() {
         <div className="px-8 pt-8 pb-6 border-b border-gray-200 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Listings</h1>
           <div className="flex gap-3">
+            {selectedListings.length > 0 && (
+              <button 
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
+              >
+                Delete ({selectedListings.length})
+              </button>
+            )}
             <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
               Add a product
             </button>
@@ -355,7 +434,10 @@ export default function Listings() {
                                     <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
                                       Deactivate
                                     </button>
-                                    <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
+                                    <button 
+                                      onClick={() => handleDeleteListing(listing.listing_id)}
+                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                                    >
                                       Delete
                                     </button>
                                   </div>
