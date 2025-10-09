@@ -1,9 +1,17 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Load Twitter widgets script
+    const script = document.createElement('script');
+    script.src = 'https://platform.twitter.com/widgets.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -23,7 +31,9 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">Sign In</Link>
+            <Link href="/login" className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400 transition-colors">
+              Sign In
+            </Link>
             <Link href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
               Get Started
             </Link>
@@ -46,7 +56,9 @@ export default function Home() {
             <div className="px-6 py-4 space-y-4">
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <Link href="/login" className="block text-gray-600 hover:text-gray-900 font-medium">Sign In</Link>
+              <Link href="/login" className="block px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400 text-center">
+                Sign In
+              </Link>
               <Link href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 text-center">
                 Get Started
               </Link>
@@ -188,75 +200,27 @@ export default function Home() {
               What Sellers Are Saying
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of happy sellers growing their business with JellySell
+              Real feedback from sellers using JellySell
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-700 mb-6">
-                "JellySell has completely transformed how I manage my reselling business. I went from spending hours every day managing multiple platforms to just a few minutes. Game changer!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-bold text-lg">SM</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Sarah Martinez</p>
-                  <p className="text-sm text-gray-500">Vintage Clothing Seller</p>
-                </div>
-              </div>
+            <div className="flex justify-center">
+              <blockquote className="twitter-tweet" data-theme="light">
+                <a href="https://x.com/okonomiyakeria/status/1954609024487567867"></a>
+              </blockquote>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-700 mb-6">
-                "The unified inbox alone is worth the price. No more logging into 4 different apps to answer customer questions. My response time has improved dramatically!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-bold text-lg">JT</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">James Thompson</p>
-                  <p className="text-sm text-gray-500">Electronics Reseller</p>
-                </div>
-              </div>
+            <div className="flex justify-center">
+              <blockquote className="twitter-tweet" data-theme="light">
+                <a href="https://x.com/WhirledJuice/status/1954611242041299068"></a>
+              </blockquote>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-gray-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-700 mb-6">
-                "I've tried other crosslisting tools, but JellySell is by far the most intuitive and powerful. The analytics dashboard helps me make smarter business decisions."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-bold text-lg">EK</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Emily Kim</p>
-                  <p className="text-sm text-gray-500">Fashion & Accessories</p>
-                </div>
-              </div>
+            <div className="flex justify-center">
+              <blockquote className="twitter-tweet" data-theme="light">
+                <a href="https://x.com/YosClothes/status/1954617503046676874"></a>
+              </blockquote>
             </div>
           </div>
         </div>
@@ -328,9 +292,9 @@ export default function Home() {
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-sm">© 2025 HAN-E LLC / JellySell®</p>
             <div className="flex justify-center gap-6 mt-4">
-              <a href="#" className="hover:text-white">
+              <a href="https://x.com/jellysell_" target="_blank" rel="noopener noreferrer" className="hover:text-white">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </a>
             </div>
