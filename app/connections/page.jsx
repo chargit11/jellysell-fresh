@@ -24,7 +24,6 @@ export default function Connections() {
         return;
       }
 
-      // Check eBay connection status
       const response = await fetch('/api/ebay/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,20 +52,17 @@ export default function Connections() {
     }
 
     try {
-      const user_id = localStorage.getItem('user_id');
-      
-      // Use the same OAuth flow as the extension
       const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
-      const redirectUri = encodeURIComponent(window.location.origin + '/oauth/ebay');
+      const redirectUri = encodeURIComponent('https://jellysell-fresh-6pnt.vercel.app/oauth/ebay');
       const state = Math.random().toString(36).substring(7);
-      const scopes = [
+      const scopes = encodeURIComponent([
         'https://api.ebay.com/oauth/api_scope',
         'https://api.ebay.com/oauth/api_scope/sell.marketing',
         'https://api.ebay.com/oauth/api_scope/sell.inventory',
         'https://api.ebay.com/oauth/api_scope/sell.account',
         'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
         'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly'
-      ].join('%20');
+      ].join(' '));
 
       localStorage.setItem('ebay_oauth_state', state);
       
@@ -116,7 +112,7 @@ export default function Connections() {
       id: 'etsy',
       name: 'Etsy',
       description: 'The global marketplace for unique and creative goods. Connect to reach millions of buyers worldwide.',
-      logo: '🟠',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
       bgColor: 'bg-orange-100'
     },
     {
@@ -162,13 +158,11 @@ export default function Connections() {
         </div>
 
         <div className="p-8">
-          {/* Header */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Platform Connections & Integrations</h2>
             <p className="text-gray-600">Connect your shop to multiple marketplaces and reach new audiences</p>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
@@ -197,7 +191,6 @@ export default function Connections() {
             </div>
           </div>
 
-          {/* Platform Cards */}
           <div className="grid grid-cols-3 gap-6">
             {platforms.map((platform) => (
               <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
