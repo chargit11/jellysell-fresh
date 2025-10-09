@@ -23,8 +23,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-            <a href="#about" className="text-gray-600 hover:text-gray-900 font-medium">About</a>
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">Login</Link>
+            <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">Sign In</Link>
             <Link href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
               Get Started
             </Link>
@@ -47,8 +46,7 @@ export default function Home() {
             <div className="px-6 py-4 space-y-4">
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <a href="#about" className="block text-gray-600 hover:text-gray-900 font-medium">About</a>
-              <Link href="/login" className="block text-gray-600 hover:text-gray-900 font-medium">Login</Link>
+              <Link href="/login" className="block text-gray-600 hover:text-gray-900 font-medium">Sign In</Link>
               <Link href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 text-center">
                 Get Started
               </Link>
@@ -64,7 +62,7 @@ export default function Home() {
             Sell Everywhere,<br />Manage in One Place
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            Connect your eBay, Etsy, Poshmark, and Depop shops. Sync inventory, manage orders, and respond to messages from a single powerful dashboard.
+            JellySell® is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-lg">
@@ -182,6 +180,88 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              What Sellers Are Saying
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Join thousands of happy sellers growing their business with JellySell
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl border border-gray-200">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-700 mb-6">
+                "JellySell has completely transformed how I manage my reselling business. I went from spending hours every day managing multiple platforms to just a few minutes. Game changer!"
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-purple-600 font-bold text-lg">SM</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Sarah Martinez</p>
+                  <p className="text-sm text-gray-500">Vintage Clothing Seller</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-700 mb-6">
+                "The unified inbox alone is worth the price. No more logging into 4 different apps to answer customer questions. My response time has improved dramatically!"
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-purple-600 font-bold text-lg">JT</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">James Thompson</p>
+                  <p className="text-sm text-gray-500">Electronics Reseller</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-700 mb-6">
+                "I've tried other crosslisting tools, but JellySell is by far the most intuitive and powerful. The analytics dashboard helps me make smarter business decisions."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-purple-600 font-bold text-lg">EK</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Emily Kim</p>
+                  <p className="text-sm text-gray-500">Fashion & Accessories</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-6 bg-gradient-to-br from-purple-600 to-purple-800">
         <div className="max-w-4xl mx-auto text-center">
@@ -212,7 +292,7 @@ export default function Home() {
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
               <p className="text-sm">
-                The all-in-one platform for multi-channel e-commerce sellers.
+                This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.
               </p>
             </div>
 
@@ -229,7 +309,6 @@ export default function Home() {
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#about" className="hover:text-white">About</a></li>
                 <li><a href="#" className="hover:text-white">Blog</a></li>
                 <li><a href="#" className="hover:text-white">Careers</a></li>
                 <li><a href="#" className="hover:text-white">Contact</a></li>
@@ -246,22 +325,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm">© 2025 JellySell. All rights reserved.</p>
-            <div className="flex gap-6 mt-4 md:mt-0">
-              <a href="#" className="hover:text-white">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-              </a>
+          <div className="border-t border-gray-800 pt-8 text-center">
+            <p className="text-sm">© 2025 HAN-E LLC / JellySell®</p>
+            <div className="flex justify-center gap-6 mt-4">
               <a href="#" className="hover:text-white">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                </svg>
-              </a>
-              <a href="#" className="hover:text-white">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
                 </svg>
               </a>
             </div>
