@@ -16,8 +16,27 @@ export default function Orders() {
       return;
     }
 
-    // For now, using mock data - you can replace this with an API call
-    setOrders([]);
+    // Mock data for testing
+    const mockOrders = [
+      {
+        id: '12345',
+        customer: 'krash_loonies',
+        items: 1,
+        status: 'Completed',
+        platform: 'Etsy',
+        total: '7.95'
+      },
+      {
+        id: '12346',
+        customer: 'luxasff',
+        items: 1,
+        status: 'Completed',
+        platform: 'Ebay',
+        total: '7.95'
+      }
+    ];
+
+    setOrders(mockOrders);
     setLoading(false);
   }, []);
 
@@ -65,7 +84,7 @@ export default function Orders() {
             </svg>
             <input
               type="text"
-              placeholder="Search your messages"
+              placeholder="Search your orders"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
