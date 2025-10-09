@@ -18,34 +18,28 @@ export default function Connections() {
 
   const checkConnections = async () => {
     try {
-      // Check if user is logged in
       const user_id = localStorage.getItem('user_id');
       if (!user_id) {
         window.location.href = '/login';
         return;
       }
 
-      // Send message to extension to get connection status
-      if (window.chrome && window.chrome.runtime) {
-        window.chrome.runtime.sendMessage(
-          'ojldkcfejdbkelhffcnagednibbdldfl',
-          { action: 'getConnectionStatus' },
-          (response) => {
-            if (response) {
-              setConnections({
-                ebay: response.ebay || false,
-                etsy: response.etsy || false,
-                poshmark: response.poshmark || false,
-                depop: response.depop || false,
-                mercari: response.mercari || false
-              });
-            }
-            setLoading(false);
-          }
-        );
-      } else {
-        setLoading(false);
+      // Check eBay connection status
+      const response = await fetch('/api/ebay/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConnections(prev => ({
+          ...prev,
+          ebay: data.connected || false
+        }));
       }
+
+      setLoading(false);
     } catch (error) {
       console.error('Error checking connections:', error);
       setLoading(false);
@@ -53,26 +47,32 @@ export default function Connections() {
   };
 
   const handleConnect = async (platform) => {
-    if (!window.chrome || !window.chrome.runtime) {
-      alert('Please install the JellySell Chrome extension to connect platforms.');
+    if (platform !== 'ebay') {
+      alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
       return;
     }
 
     try {
-      const action = platform === 'ebay' ? 'connectEbay' : `connect${platform.charAt(0).toUpperCase() + platform.slice(1)}`;
+      const user_id = localStorage.getItem('user_id');
       
-      window.chrome.runtime.sendMessage(
-        'ojldkcfejdbkelhffcnagednibbdldfl',
-        { action },
-        (response) => {
-          if (response && response.success) {
-            setConnections(prev => ({ ...prev, [platform]: true }));
-            alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully!`);
-          } else {
-            alert(`Failed to connect ${platform}: ${response?.error || 'Unknown error'}`);
-          }
-        }
-      );
+      // Use the same OAuth flow as the extension
+      const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
+      const redirectUri = encodeURIComponent(window.location.origin + '/oauth/ebay');
+      const state = Math.random().toString(36).substring(7);
+      const scopes = [
+        'https://api.ebay.com/oauth/api_scope',
+        'https://api.ebay.com/oauth/api_scope/sell.marketing',
+        'https://api.ebay.com/oauth/api_scope/sell.inventory',
+        'https://api.ebay.com/oauth/api_scope/sell.account',
+        'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+        'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly'
+      ].join('%20');
+
+      localStorage.setItem('ebay_oauth_state', state);
+      
+      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}&scope=${scopes}`;
+      
+      window.location.href = authUrl;
     } catch (error) {
       console.error('Error connecting platform:', error);
       alert('Error connecting platform. Please try again.');
@@ -80,8 +80,7 @@ export default function Connections() {
   };
 
   const handleDisconnect = async (platform) => {
-    if (!window.chrome || !window.chrome.runtime) {
-      alert('Please install the JellySell Chrome extension.');
+    if (platform !== 'ebay') {
       return;
     }
 
@@ -90,20 +89,22 @@ export default function Connections() {
     }
 
     try {
-      const action = platform === 'ebay' ? 'disconnectEbay' : `disconnect${platform.charAt(0).toUpperCase() + platform.slice(1)}`;
+      const user_id = localStorage.getItem('user_id');
       
-      window.chrome.runtime.sendMessage(
-        'ojldkcfejdbkelhffcnagednibbdldfl',
-        { action },
-        (response) => {
-          if (response && response.success) {
-            setConnections(prev => ({ ...prev, [platform]: false }));
-            alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!`);
-          } else {
-            alert(`Failed to disconnect ${platform}: ${response?.error || 'Unknown error'}`);
-          }
-        }
-      );
+      const response = await fetch('/api/ebay/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setConnections(prev => ({ ...prev, [platform]: false }));
+        alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!`);
+      } else {
+        alert(`Failed to disconnect ${platform}: ${data.error || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Error disconnecting platform:', error);
       alert('Error disconnecting platform. Please try again.');
@@ -115,7 +116,7 @@ export default function Connections() {
       id: 'etsy',
       name: 'Etsy',
       description: 'The global marketplace for unique and creative goods. Connect to reach millions of buyers worldwide.',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
+      logo: '🟠',
       bgColor: 'bg-orange-100'
     },
     {
@@ -129,27 +130,28 @@ export default function Connections() {
       id: 'poshmark',
       name: 'Poshmark',
       description: 'Social commerce marketplace for fashion. Connect with style-conscious buyers and sellers.',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Poshmark_logo.svg',
+      logo: '👗',
       bgColor: 'bg-purple-100'
     },
     {
       id: 'depop',
       name: 'Depop',
       description: 'Mobile marketplace for buying and selling unique fashion. Connect with Gen Z shoppers.',
-      logo: 'https://seeklogo.com/images/D/depop-logo-3F7B005C18-seeklogo.com.png',
+      logo: '🛍️',
       bgColor: 'bg-red-100'
     },
     {
       id: 'mercari',
       name: 'Mercari',
       description: 'Simple selling marketplace. List items easily and reach millions of buyers in the US and Japan.',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Mercari_logo.svg',
+      logo: '🏪',
       bgColor: 'bg-blue-100'
     }
   ];
 
   const connectedCount = Object.values(connections).filter(Boolean).length;
   const totalPlatforms = platforms.length;
+  const allConnected = connectedCount === totalPlatforms;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -171,7 +173,7 @@ export default function Connections() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">Connected Platforms</h3>
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${allConnected ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -201,7 +203,11 @@ export default function Connections() {
               <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-16 h-16 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
-                    <img src={platform.logo} alt={platform.name} className="w-10 h-10 object-contain" />
+                    {platform.logo.startsWith('http') ? (
+                      <img src={platform.logo} alt={platform.name} className="w-10 h-10 object-contain" />
+                    ) : (
+                      <span className="text-3xl">{platform.logo}</span>
+                    )}
                   </div>
                   {connections[platform.id] ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
