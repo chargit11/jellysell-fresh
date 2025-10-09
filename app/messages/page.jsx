@@ -54,9 +54,9 @@ export default function Messages() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header bar spanning full width */}
-        <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between bg-white">
+        <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
           <h2 className="text-xl font-semibold text-gray-900">Messages</h2>
           <div className="flex items-center gap-4 flex-1 max-w-3xl ml-8">
             <div className="relative flex-1">
@@ -71,16 +71,16 @@ export default function Messages() {
                 className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            <select className="px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <select className="px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex-shrink-0">
               <option>Auto-reply</option>
               <option>Manual reply</option>
             </select>
           </div>
         </div>
 
-        <div className="flex flex-1">
+        <div className="flex flex-1 min-h-0">
           {/* Left sidebar with folders */}
-          <div className="w-64 bg-white border-r border-gray-200">
+          <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
             <div className="px-6 py-4">
               <div className="space-y-1">
                 {folders.map(folder => (
@@ -101,9 +101,9 @@ export default function Messages() {
           </div>
 
           {/* Main content */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0">
             {/* Action bar */}
-            <div className="px-8 py-4 border-b border-gray-200 bg-white flex items-center gap-4">
+            <div className="px-8 py-4 border-b border-gray-200 bg-white flex items-center gap-4 flex-shrink-0">
               <input
                 type="checkbox"
                 checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0}
