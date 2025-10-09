@@ -4,13 +4,25 @@ import Link from 'next/link';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tweetsLoaded, setTweetsLoaded] = useState(false);
 
   useEffect(() => {
     // Load Twitter widgets script
     const script = document.createElement('script');
     script.src = 'https://platform.twitter.com/widgets.js';
     script.async = true;
+    script.charset = 'utf-8';
+    script.onload = () => {
+      setTweetsLoaded(true);
+      if (window.twttr) {
+        window.twttr.widgets.load();
+      }
+    };
     document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   return (
@@ -204,22 +216,43 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex justify-center">
-              <blockquote className="twitter-tweet" data-theme="light">
-                <a href="https://x.com/okonomiyakeria/status/1954609024487567867"></a>
+          <div className="grid md:grid-cols-3 gap-8" id="tweets-container">
+            <div className="flex justify-center min-h-[400px]">
+              {!tweetsLoaded && (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                </div>
+              )}
+              <blockquote className="twitter-tweet" data-conversation="none" data-dnt="true">
+                <p lang="en" dir="ltr">
+                  <a href="https://twitter.com/okonomiyakeria/status/1954609024487567867"></a>
+                </p>
               </blockquote>
             </div>
 
-            <div className="flex justify-center">
-              <blockquote className="twitter-tweet" data-theme="light">
-                <a href="https://x.com/WhirledJuice/status/1954611242041299068"></a>
+            <div className="flex justify-center min-h-[400px]">
+              {!tweetsLoaded && (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                </div>
+              )}
+              <blockquote className="twitter-tweet" data-conversation="none" data-dnt="true">
+                <p lang="en" dir="ltr">
+                  <a href="https://twitter.com/WhirledJuice/status/1954611242041299068"></a>
+                </p>
               </blockquote>
             </div>
 
-            <div className="flex justify-center">
-              <blockquote className="twitter-tweet" data-theme="light">
-                <a href="https://x.com/YosClothes/status/1954617503046676874"></a>
+            <div className="flex justify-center min-h-[400px]">
+              {!tweetsLoaded && (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                </div>
+              )}
+              <blockquote className="twitter-tweet" data-conversation="none" data-dnt="true">
+                <p lang="en" dir="ltr">
+                  <a href="https://twitter.com/YosClothes/status/1954617503046676874"></a>
+                </p>
               </blockquote>
             </div>
           </div>
