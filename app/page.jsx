@@ -31,11 +31,12 @@ export default function Home() {
       <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
         <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img 
-              src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" 
-              alt="JellySell" 
-              className="w-8 h-8"
-            />
+            <svg className="w-8 h-8 text-purple-600" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 4C12.954 4 4 12.954 4 24s8.954 20 20 20 20-8.954 20-20S35.046 4 24 4zm0 36c-8.822 0-16-7.178-16-16S15.178 8 24 8s16 7.178 16 16-7.178 16-16 16z" fill="currentColor"/>
+              <path d="M24 12c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" fill="currentColor"/>
+              <circle cx="24" cy="24" r="4" fill="currentColor"/>
+              <path d="M12 24c0-1.5 1-3 2-4M36 24c0 1.5-1 3-2 4M24 12c1.5 0 3 1 4 2M24 36c-1.5 0-3-1-4-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </div>
 
@@ -116,8 +117,69 @@ export default function Home() {
         </div>
       </section>
 
+      {/* See JellySell in Action */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              See JellySell® in Action
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Experience the power of unified multi-platform management
+            </p>
+          </div>
+
+          <div className="space-y-16">
+            {/* Dashboard Screenshot */}
+            <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-8 border border-purple-100">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Unified Dashboard</h3>
+                <p className="text-gray-600">Monitor all your sales, inventory, and performance metrics in one place</p>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
+                <img 
+                  src="https://via.placeholder.com/1200x700/f3f4f6/9333ea?text=Dashboard+Overview" 
+                  alt="JellySell Dashboard" 
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Messages Screenshot */}
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 border border-blue-100">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Unified Inbox</h3>
+                <p className="text-gray-600">Manage customer messages from all platforms in one centralized location</p>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
+                <img 
+                  src="https://via.placeholder.com/1200x700/f3f4f6/3b82f6?text=Messages+Interface" 
+                  alt="JellySell Messages" 
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Listings Screenshot */}
+            <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-100">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Inventory Management</h3>
+                <p className="text-gray-600">Update and sync your inventory across all connected marketplaces instantly</p>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
+                <img 
+                  src="https://via.placeholder.com/1200x700/f3f4f6/10b981?text=Listings+Management" 
+                  alt="JellySell Listings" 
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section id="features" className="py-24 px-6">
+      <section id="features" className="py-24 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -205,7 +267,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -281,11 +343,12 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img 
-                  src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" 
-                  alt="JellySell" 
-                  className="w-6 h-6"
-                />
+                <svg className="w-6 h-6 text-purple-400" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M24 4C12.954 4 4 12.954 4 24s8.954 20 20 20 20-8.954 20-20S35.046 4 24 4zm0 36c-8.822 0-16-7.178-16-16S15.178 8 24 8s16 7.178 16 16-7.178 16-16 16z" fill="currentColor"/>
+                  <path d="M24 12c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" fill="currentColor"/>
+                  <circle cx="24" cy="24" r="4" fill="currentColor"/>
+                  <path d="M12 24c0-1.5 1-3 2-4M36 24c0 1.5-1 3-2 4M24 12c1.5 0 3 1 4 2M24 36c-1.5 0-3-1-4-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
               <p className="text-sm">
@@ -298,7 +361,6 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="hover:text-white">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">Integrations</a></li>
                 <li><a href="#" className="hover:text-white">Chrome Extension</a></li>
               </ul>
             </div>
@@ -306,8 +368,7 @@ export default function Home() {
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
+                <li><a href="#" className="hover:text-white">Help Center</a></li>
                 <li><a href="#" className="hover:text-white">Contact</a></li>
               </ul>
             </div>
@@ -317,7 +378,6 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
               </ul>
             </div>
           </div>
