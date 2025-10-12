@@ -26,7 +26,9 @@ export default function Home() {
     };
     document.body.appendChild(script);
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -122,7 +124,7 @@ export default function Home() {
 
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere, Manage in One Place</h1>
+          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</Link>
@@ -160,10 +162,159 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="bg-gray-900 text-gray-400 py-12 px-6">
+      <section id="features" className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-sm">2025 HAN-E LLC / JellySell</p>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Everything You Need to Grow</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Powerful tools designed for multi-platform sellers</p>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Multi-Platform Sync</h3>
+              <p className="text-gray-600">Automatically sync your inventory across eBay, Etsy, Poshmark, and Depop. Update once, sell everywhere.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Unified Inbox</h3>
+              <p className="text-gray-600">Manage all your customer messages from different platforms in one centralized inbox. Never miss a message.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Analytics Dashboard</h3>
+              <p className="text-gray-600">Track your sales, revenue, and performance across all platforms with beautiful, actionable insights.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Order Management</h3>
+              <p className="text-gray-600">Process orders from all your platforms in one place. Print shipping labels and track fulfillment easily.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Financial Tracking</h3>
+              <p className="text-gray-600">Monitor revenue, fees, and profits across all platforms. Export reports for accounting and tax purposes.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Bulk Actions</h3>
+              <p className="text-gray-600">Edit prices, update inventory, and manage listings in bulk. Save hours with powerful automation tools.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900">What sellers are saying</h2>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://twitter.com/okonomiyakeria/status/1954609024487567867"></a>
+              </blockquote>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://twitter.com/WhirledJuice/status/1954611242041299068"></a>
+              </blockquote>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://twitter.com/YosClothes/status/1954617503046676874"></a>
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-purple-600">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
+          <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell to manage their multi-platform businesses.</p>
+          <Link href="/signup" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</Link>
+          <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
+        </div>
+      </section>
+
+      <footer className="bg-slate-900 text-gray-400 py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between gap-24 mb-12">
+            <div className="flex-1 max-w-xs">
+              <div className="flex items-center gap-2 mb-4">
+                <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
+                <span className="text-lg font-bold text-white">jellysell</span>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+            </div>
+            
+            <div className="flex gap-24">
+              <div>
+                <h3 className="text-white font-semibold mb-4">Product</h3>
+                <div className="space-y-3">
+                  <a href="#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
+                  <a href="#pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</a>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-white font-semibold mb-4">Resources</h3>
+                <div className="space-y-3">
+                  <a href="#" className="block text-gray-400 hover:text-white text-sm">Help Center</a>
+                  <a href="mailto:support@jellysell.com" className="block text-gray-400 hover:text-white text-sm">Contact Us</a>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-white font-semibold mb-4">Company</h3>
+                <div className="space-y-3">
+                  <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
+                  <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 pt-8 flex justify-between items-center">
+            <p className="text-sm text-gray-400">© 2025 HAN-E LLC / JellySell®</p>
+            <a href="https://x.com/jellysell_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
           </div>
         </div>
       </footer>
