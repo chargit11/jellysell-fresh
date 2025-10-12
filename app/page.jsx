@@ -140,6 +140,9 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Poshmark_logo.svg/2560px-Poshmark_logo.svg.png" alt="Poshmark" className="h-8" />
+            <img src="https://1000logos.net/wp-content/uploads/2023/01/Depop-logo.png" alt="Depop" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Mercari_logo.svg/2560px-Mercari_logo.svg.png" alt="Mercari" className="h-8" />
           </div>
         </div>
       </section>
@@ -278,7 +281,7 @@ export default function Home() {
                 <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-[200px]">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
             </div>
             
             <div>
@@ -306,9 +309,9 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 pt-8 flex justify-between items-center">
+          <div className="border-t border-gray-800 pt-8 flex justify-center items-center relative">
             <p className="text-sm text-gray-400">© 2025 HAN-E LLC / JellySell®</p>
-            <a href="https://x.com/jellysell_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+            <a href="https://x.com/jellysell_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors absolute right-0">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
