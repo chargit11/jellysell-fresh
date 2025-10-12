@@ -1,30 +1,19 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [tweetsLoaded, setTweetsLoaded] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://platform.twitter.com/widgets.js';
     script.async = true;
     script.charset = 'utf-8';
-    script.onload = () => {
-      setTweetsLoaded(true);
-      if (window.twttr) {
-        window.twttr.widgets.load();
-      }
-    };
     document.body.appendChild(script);
+    
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -32,30 +21,14 @@ export default function Home() {
     };
   }, []);
 
-  const handleSignIn = async (e) => {
+  const handleSignIn = (e) => {
     e.preventDefault();
     setError('');
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('user_id', data.user_id);
-        localStorage.setItem('user_email', data.email);
-        router.push('/dashboard');
-      } else {
-        setError(data.error || 'Invalid credentials');
-      }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-    }
+    alert('Sign in clicked!');
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{ minWidth: '1024px' }}>
       {showSignInModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full relative">
@@ -69,25 +42,25 @@ export default function Home() {
               <span className="text-xl font-bold text-gray-900">jellysell</span>
             </div>
             <h2 className="text-2xl font-bold text-center mb-6">Welcome back!</h2>
-            <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full px-4 py-3 border border-gray-300 rounded-lg" required />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" required />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
               </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
+              <button onClick={handleSignIn} className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
               <div className="text-center"><a href="#" className="text-sm text-purple-600">Forgot your password?</a></div>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
               </div>
               <button type="button" className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">Continue with Google</button>
-              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <Link href="/signup" className="text-purple-600 font-semibold">Sign up</Link></p>
-            </form>
+              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <a href="#" className="text-purple-600 font-semibold">Sign up</a></p>
+            </div>
           </div>
         </div>
       )}
@@ -98,28 +71,13 @@ export default function Home() {
             <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
+          <div className="flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
             <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <Link href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</Link>
+            <a href="#" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</a>
           </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </nav>
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 bg-white">
-            <div className="px-6 py-4 space-y-4">
-              <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
-              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
-              <Link href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</Link>
-            </div>
-          </div>
-        )}
       </header>
 
       <section className="pt-32 pb-20 px-6">
@@ -127,7 +85,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</Link>
+            <a href="#" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</a>
             <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
           </div>
           <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
@@ -265,7 +223,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
           <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell to manage their multi-platform businesses.</p>
-          <Link href="/signup" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</Link>
+          <a href="#" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</a>
           <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
         </div>
       </section>
