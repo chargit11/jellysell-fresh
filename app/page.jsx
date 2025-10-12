@@ -1,20 +1,30 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tweetsLoaded, setTweetsLoaded] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://platform.twitter.com/widgets.js';
     script.async = true;
     script.charset = 'utf-8';
+    script.onload = () => {
+      setTweetsLoaded(true);
+      if (window.twttr) {
+        window.twttr.widgets.load();
+      }
+    };
     document.body.appendChild(script);
-    
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -22,10 +32,26 @@ export default function Home() {
     };
   }, []);
 
-  const handleSignIn = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
-    alert('Sign in clicked!');
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('user_id', data.user_id);
+        localStorage.setItem('user_email', data.email);
+        router.push('/dashboard');
+      } else {
+        setError(data.error || 'Invalid credentials');
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+    }
   };
 
   return (
@@ -43,25 +69,25 @@ export default function Home() {
               <span className="text-xl font-bold text-gray-900">jellysell</span>
             </div>
             <h2 className="text-2xl font-bold text-center mb-6">Welcome back!</h2>
-            <div className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full px-4 py-3 border border-gray-300 rounded-lg" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" required />
               </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button onClick={handleSignIn} className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
+              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
               <div className="text-center"><a href="#" className="text-sm text-purple-600">Forgot your password?</a></div>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
               </div>
               <button type="button" className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">Continue with Google</button>
-              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <a href="/signup" className="text-purple-600 font-semibold">Sign up</a></p>
-            </div>
+              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <Link href="/signup" className="text-purple-600 font-semibold">Sign up</Link></p>
+            </form>
           </div>
         </div>
       )}
@@ -76,7 +102,7 @@ export default function Home() {
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
             <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <a href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</a>
+            <Link href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</Link>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +116,7 @@ export default function Home() {
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
               <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
-              <a href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</a>
+              <Link href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</Link>
             </div>
           </div>
         )}
@@ -101,7 +127,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</a>
+            <Link href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</Link>
             <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
           </div>
           <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
@@ -214,19 +240,19 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+            <div>
               <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
                 <a href="https://twitter.com/okonomiyakeria/status/1954609024487567867"></a>
               </blockquote>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+            <div>
               <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
                 <a href="https://twitter.com/WhirledJuice/status/1954611242041299068"></a>
               </blockquote>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-gray-200">
+            <div>
               <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
                 <a href="https://twitter.com/YosClothes/status/1954617503046676874"></a>
               </blockquote>
@@ -239,15 +265,15 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
           <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell to manage their multi-platform businesses.</p>
-          <a href="/signup" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</a>
+          <Link href="/signup" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</Link>
           <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
         </div>
       </section>
 
       <footer className="bg-slate-900 text-gray-400 py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between gap-24 mb-12">
-            <div className="flex-1 max-w-xs">
+          <div className="grid grid-cols-4 gap-24 mb-12">
+            <div>
               <div className="flex items-center gap-2 mb-4">
                 <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
                 <span className="text-lg font-bold text-white">jellysell</span>
@@ -255,29 +281,27 @@ export default function Home() {
               <p className="text-sm text-gray-400 leading-relaxed">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
             </div>
             
-            <div className="flex gap-24">
-              <div>
-                <h3 className="text-white font-semibold mb-4">Product</h3>
-                <div className="space-y-3">
-                  <a href="#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
-                  <a href="#pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</a>
-                </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">Product</h3>
+              <div className="space-y-3">
+                <a href="#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
+                <a href="#pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</a>
               </div>
-              
-              <div>
-                <h3 className="text-white font-semibold mb-4">Resources</h3>
-                <div className="space-y-3">
-                  <a href="#" className="block text-gray-400 hover:text-white text-sm">Help Center</a>
-                  <a href="mailto:support@jellysell.com" className="block text-gray-400 hover:text-white text-sm">Contact Us</a>
-                </div>
+            </div>
+            
+            <div>
+              <h3 className="text-white font-semibold mb-4">Resources</h3>
+              <div className="space-y-3">
+                <a href="#" className="block text-gray-400 hover:text-white text-sm">Help Center</a>
+                <a href="mailto:support@jellysell.com" className="block text-gray-400 hover:text-white text-sm">Contact Us</a>
               </div>
-              
-              <div>
-                <h3 className="text-white font-semibold mb-4">Company</h3>
-                <div className="space-y-3">
-                  <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
-                  <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
-                </div>
+            </div>
+            
+            <div>
+              <h3 className="text-white font-semibold mb-4">Company</h3>
+              <div className="space-y-3">
+                <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
+                <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
               </div>
             </div>
           </div>
