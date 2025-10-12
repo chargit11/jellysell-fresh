@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -28,7 +29,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ minWidth: '1024px' }}>
+    <div className="min-h-screen bg-white">
       {showSignInModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full relative">
@@ -59,7 +60,7 @@ export default function Home() {
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
               </div>
               <button type="button" className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">Continue with Google</button>
-              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <a href="#" className="text-purple-600 font-semibold">Sign up</a></p>
+              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <a href="/signup" className="text-purple-600 font-semibold">Sign up</a></p>
             </div>
           </div>
         </div>
@@ -71,13 +72,28 @@ export default function Home() {
             <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </div>
-          <div className="flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
             <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <a href="#" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</a>
+            <a href="/signup" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</a>
           </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </nav>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-6 py-4 space-y-4">
+              <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
+              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
+              <a href="/signup" className="block px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</a>
+            </div>
+          </div>
+        )}
       </header>
 
       <section className="pt-32 pb-20 px-6">
@@ -85,7 +101,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a href="#" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</a>
+            <a href="/signup" className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</a>
             <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
           </div>
           <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
@@ -223,7 +239,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
           <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell to manage their multi-platform businesses.</p>
-          <a href="#" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</a>
+          <a href="/signup" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</a>
           <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
         </div>
       </section>
