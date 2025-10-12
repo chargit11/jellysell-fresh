@@ -65,7 +65,14 @@ export default function Home() {
               </svg>
             </button>
             <div className="flex items-center justify-center gap-2 mb-6">
-              <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C12 2 8 4 8 8C8 12 12 14 12 14C12 14 16 12 16 8C16 4 12 2 12 2Z" fill="#8B5CF6"/>
+                <path d="M8 8C8 8 6 10 6 12C6 14 8 15 8 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+                <path d="M10 9C10 9 8 11 8 13C8 15 10 16 10 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+                <path d="M12 10C12 10 10 12 10 14C10 16 12 17 12 17" stroke="#8B5CF6" strokeWidth="1.5"/>
+                <path d="M14 9C14 9 16 11 16 13C16 15 14 16 14 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+                <path d="M16 8C16 8 18 10 18 12C18 14 16 15 16 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+              </svg>
               <span className="text-xl font-bold text-gray-900">jellysell</span>
             </div>
             <h2 className="text-2xl font-bold text-center mb-6">Welcome back!</h2>
@@ -95,7 +102,14 @@ export default function Home() {
       <header className="fixed top-0 w-full bg-white border-b border-gray-200 z-50">
         <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C12 2 8 4 8 8C8 12 12 14 12 14C12 14 16 12 16 8C16 4 12 2 12 2Z" fill="#8B5CF6"/>
+              <path d="M8 8C8 8 6 10 6 12C6 14 8 15 8 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+              <path d="M10 9C10 9 8 11 8 13C8 15 10 16 10 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+              <path d="M12 10C12 10 10 12 10 14C10 16 12 17 12 17" stroke="#8B5CF6" strokeWidth="1.5"/>
+              <path d="M14 9C14 9 16 11 16 13C16 15 14 16 14 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+              <path d="M16 8C16 8 18 10 18 12C18 14 16 15 16 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+            </svg>
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -140,9 +154,9 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Poshmark_logo.svg/2560px-Poshmark_logo.svg.png" alt="Poshmark" className="h-8" />
-            <img src="https://1000logos.net/wp-content/uploads/2023/01/Depop-logo.png" alt="Depop" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Mercari_logo.svg/2560px-Mercari_logo.svg.png" alt="Mercari" className="h-8" />
+            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#780036">Poshmark</text></svg>
+            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#E31C23">Depop</text></svg>
+            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#0066CC">Mercari</text></svg>
           </div>
         </div>
       </section>
@@ -278,10 +292,17 @@ export default function Home() {
           <div className="grid grid-cols-4 gap-24 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="https://i.ibb.co/1tp0Y9jz/jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C12 2 8 4 8 8C8 12 12 14 12 14C12 14 16 12 16 8C16 4 12 2 12 2Z" fill="#8B5CF6"/>
+                  <path d="M8 8C8 8 6 10 6 12C6 14 8 15 8 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+                  <path d="M10 9C10 9 8 11 8 13C8 15 10 16 10 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+                  <path d="M12 10C12 10 10 12 10 14C10 16 12 17 12 17" stroke="#8B5CF6" strokeWidth="1.5"/>
+                  <path d="M14 9C14 9 16 11 16 13C16 15 14 16 14 16" stroke="#8B5CF6" strokeWidth="1.5"/>
+                  <path d="M16 8C16 8 18 10 18 12C18 14 16 15 16 15" stroke="#8B5CF6" strokeWidth="1.5"/>
+                </svg>
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed max-w-[200px]">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+              <p className="text-sm text-gray-400 leading-relaxed">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
             </div>
             
             <div>
