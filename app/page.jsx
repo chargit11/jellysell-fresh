@@ -279,9 +279,9 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <img src="https://logo.clearbit.com/poshmark.com?size=128" alt="Poshmark" className="h-8" />
-            <img src="https://logo.clearbit.com/depop.com?size=128" alt="Depop" className="h-8" />
-            <img src="https://logo.clearbit.com/mercari.com?size=128" alt="Mercari" className="h-8" />
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/poshmark.svg" alt="Poshmark" className="h-8 w-auto" />
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/depop.svg" alt="Depop" className="h-8 w-auto" />
+            <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/mercari.svg" alt="Mercari" className="h-8 w-auto" />
           </div>
         </div>
       </section>
