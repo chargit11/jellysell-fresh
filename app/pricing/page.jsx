@@ -1,10 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Pricing() {
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://platform.twitter.com/widgets.js';
+    script.async = true;
+    script.charset = 'utf-8';
+    document.body.appendChild(script);
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const examples = [
     { sales: 500, fee: 10, saved: 'vs $19-49/mo' },
@@ -12,30 +24,6 @@ export default function Pricing() {
     { sales: 2000, fee: 40, saved: 'vs $99/mo' },
     { sales: 5000, fee: 40, saved: 'Capped at $40!' },
     { sales: 10000, fee: 40, saved: '$160 saved!' }
-  ];
-
-  const tweets = [
-    {
-      author: "David Perell",
-      handle: "@david_perell",
-      avatar: "https://pbs.twimg.com/profile_images/1609237944426921984/4FA22TJL_400x400.jpg",
-      text: "I have used 4 of these 5 sites separately, but I'm now going to list my used Diesel clothing once on JellySell (http://JellySell.com) as it will go out to all of them automatically! I bet they add a few more sites over time as well.",
-      verified: true
-    },
-    {
-      author: "Sahil Bloom",
-      handle: "@SahilBloom",
-      avatar: "https://pbs.twimg.com/profile_images/1591870100991258624/js7ZJGCl_400x400.jpg",
-      text: "I have a couple extra blender accessories that I'll sell on http://JellySell.com. I can list them once there and automatically put them on eBay, etsy, and other sites.",
-      verified: true
-    },
-    {
-      author: "Greg Isenberg",
-      handle: "@gregisenberg",
-      avatar: "https://pbs.twimg.com/profile_images/1781845134721056768/7oh_Uhko_400x400.jpg",
-      text: "The unified messaging in @jellysell_ is what I've been looking for. No more switching between 5 different apps to respond to customers. This is what crosslisting should be! 🤓",
-      verified: true
-    }
   ];
 
   return (
@@ -50,8 +38,8 @@ export default function Pricing() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="/#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</Link>
             <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
+            <Link href="/" className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</Link>
+            <Link href="/" className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</Link>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,28 +142,23 @@ export default function Pricing() {
           </p>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {tweets.map((tweet, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 hover:border-purple-200 transition-all">
-                <div className="flex items-start gap-3 mb-4">
-                  <img src={tweet.avatar} alt={tweet.author} className="w-12 h-12 rounded-full" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold text-gray-900">{tweet.author}</span>
-                      {tweet.verified && (
-                        <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-500">{tweet.handle}</span>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                </div>
-                <p className="text-gray-700 leading-relaxed">{tweet.text}</p>
-              </div>
-            ))}
+            <div>
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://x.com/okonomiyakeria/status/1954609024487567867"></a>
+              </blockquote>
+            </div>
+
+            <div>
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://x.com/WhirledJuice/status/1954611242041299068"></a>
+              </blockquote>
+            </div>
+
+            <div>
+              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
+                <a href="https://x.com/YosClothes/status/1954617503046676874"></a>
+              </blockquote>
+            </div>
           </div>
         </div>
       </section>
@@ -228,9 +211,9 @@ export default function Pricing() {
           <p className="text-lg text-purple-100 mb-10">
             No risk, all reward.
           </p>
-          <button onClick={() => setShowSignUpModal(true)} className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">
+          <Link href="/" className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">
             Start Selling Today
-          </button>
+          </Link>
           <p className="text-purple-100 text-sm mt-6">
             No setup fees • No monthly minimums • Cancel anytime
           </p>
