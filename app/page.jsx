@@ -243,7 +243,7 @@ export default function Home() {
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
             <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#780036">Poshmark</text></svg>
             <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#E31C23">Depop</text></svg>
-            <img src="https://i.ibb.co/khddXnD/mercari-logo.png" alt="Mercari" className="h-8" />          </div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/26/Mercari_logo.svg" alt="Mercari" className="h-8" />         </div>
         </div>
       </section>
 
