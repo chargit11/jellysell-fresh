@@ -8,6 +8,8 @@ export default function Messages() {
   const [selectedFolder, setSelectedFolder] = useState('inbox');
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openMessage, setOpenMessage] = useState(null);
+  const [reply, setReply] = useState('');
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -50,6 +52,36 @@ export default function Messages() {
                          msg.sender?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
+  async function openThread(message) {
+    setOpenMessage(message);
+  }
+
+  async function sendReply() {
+    if (!reply.trim() || !openMessage) return;
+    const user_id = localStorage.getItem('user_id');
+    try {
+      const res = await fetch('/api/ebay/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id,
+          message_id: openMessage.message_id,
+          buyer_username: openMessage.sender,
+          subject: `Re: ${openMessage.subject || ''}`.trim(),
+          text: reply
+        })
+      });
+      if (res.ok) {
+        setReply('');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Failed to send');
+      }
+    } catch (e) {
+      alert('Failed to send');
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -174,6 +206,7 @@ export default function Messages() {
                     <div
                       key={idx}
                       className="flex items-center gap-4 px-8 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => openThread(message)}
                     >
                       <input
                         type="checkbox"
@@ -202,7 +235,40 @@ export default function Messages() {
                 </div>
               )}
             </div>
-          </div>
+        </div>
+
+        {/* Chat drawer */}
+        {openMessage && (
+          <>
+            <div className="fixed inset-0 bg-black/30 z-[60]" onClick={() => setOpenMessage(null)}></div>
+            <div className="fixed right-0 top-0 h-full w-full sm:w-[520px] bg-white shadow-2xl z-[70] flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">From</p>
+                  <h3 className="text-base font-semibold text-gray-900 truncate">{openMessage.sender}</h3>
+                  <p className="text-sm text-gray-600 truncate">{openMessage.subject || 'No subject'}</p>
+                </div>
+                <button className="text-gray-500 hover:text-gray-700" onClick={() => setOpenMessage(null)}>✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="max-w-[85%] bg-gray-100 text-gray-800 px-4 py-3 rounded-2xl rounded-tl-sm whitespace-pre-wrap">
+                  {openMessage.body || 'No content'}
+                </div>
+              </div>
+              <div className="border-t border-gray-200 p-4">
+                <div className="flex items-end gap-3">
+                  <textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    placeholder="Write a reply..."
+                    className="flex-1 min-h-[44px] max-h-40 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button onClick={sendReply} className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Send</button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
         </div>
       </div>
     </div>
