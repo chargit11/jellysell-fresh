@@ -13,6 +13,15 @@ export default function Listings() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: '',
+    description: '',
+    price: '',
+    quantity: 1,
+    category: '',
+    images: []
+  });
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -241,7 +250,7 @@ export default function Listings() {
                 Delete ({selectedListings.length})
               </button>
             )}
-            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
+            <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
               Add a product
             </button>
             <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
@@ -250,6 +259,77 @@ export default function Listings() {
           </div>
         </div>
 
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowAddModal(false)}></div>
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-purple-600/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Add a Product</h3>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left: Image uploader placeholder */}
+              <div className="md:col-span-1">
+                <div className="aspect-square rounded-xl border border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <svg className="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h2l2-3h10l2 3h2v13H3V7z"/></svg>
+                    <p className="mt-2 text-sm text-gray-600">Upload images</p>
+                    <p className="text-xs text-gray-400">Drag & drop or click to browse</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Form fields */}
+              <div className="md:col-span-2 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input value={newProduct.title} onChange={(e)=>setNewProduct({...newProduct,title:e.target.value})} type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Product title" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea value={newProduct.description} onChange={(e)=>setNewProduct({...newProduct,description:e.target.value})} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Write a compelling description"></textarea>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                    <div className="flex items-center gap-1 border border-gray-300 rounded-lg px-3 py-2">
+                      <span className="text-gray-500">$</span>
+                      <input value={newProduct.price} onChange={(e)=>setNewProduct({...newProduct,price:e.target.value})} type="number" className="w-full focus:outline-none" placeholder="0.00" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <input value={newProduct.quantity} onChange={(e)=>setNewProduct({...newProduct,quantity:e.target.value})} type="number" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select value={newProduct.category} onChange={(e)=>setNewProduct({...newProduct,category:e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                      <option value="">Select</option>
+                      <option>Clothing</option>
+                      <option>Shoes</option>
+                      <option>Electronics</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
+              <button onClick={()=>setShowAddModal(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white">Cancel</button>
+              <button className="px-5 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700">Save Product</button>
+            </div>
+          </div>
+        </div>
+      )}
         <div className="px-8 pt-6 border-b border-gray-200">
           <div className="flex gap-6">
             {tabs.map(tab => (
