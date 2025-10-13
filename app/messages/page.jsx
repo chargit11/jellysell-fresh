@@ -65,20 +65,37 @@ export default function Messages() {
     try {
       const user_id = localStorage.getItem('user_id');
       const response = await fetch(`/api/messages/${message.message_id}?user_id=${user_id}`);
-      const data = await response.json();
       
-      // Transform the data to match the thread format
-      setThreadMessages(data.conversation || [
-        {
+      if (!response.ok) {
+        console.error('Failed to fetch thread:', response.status);
+        // Fall back to showing just the original message
+        setThreadMessages([{
           id: message.message_id,
           sender: 'buyer',
           content: message.body || message.subject,
           timestamp: new Date(message.created_at),
           senderName: message.sender || 'eBay User'
-        }
-      ]);
+        }]);
+      } else {
+        const data = await response.json();
+        setThreadMessages(data.conversation || [{
+          id: message.message_id,
+          sender: 'buyer',
+          content: message.body || message.subject,
+          timestamp: new Date(message.created_at),
+          senderName: message.sender || 'eBay User'
+        }]);
+      }
     } catch (error) {
       console.error('Failed to load thread:', error);
+      // Show the message anyway
+      setThreadMessages([{
+        id: message.message_id,
+        sender: 'buyer',
+        content: message.body || message.subject,
+        timestamp: new Date(message.created_at),
+        senderName: message.sender || 'eBay User'
+      }]);
     } finally {
       setLoading(false);
     }
@@ -89,34 +106,48 @@ export default function Messages() {
     if (!replyText.trim() || isSending || !selectedThread) return;
 
     setIsSending(true);
+    
+    // Optimistically add the message to UI
+    const newMessage = {
+      id: Date.now().toString(),
+      sender: 'seller',
+      content: replyText,
+      timestamp: new Date(),
+      senderName: 'You'
+    };
+    setThreadMessages([...threadMessages, newMessage]);
+    const messageToSend = replyText;
+    setReplyText('');
+    
     try {
       const user_id = localStorage.getItem('user_id');
-      const response = await fetch(`/api/messages/${selectedThread.message_id}/reply`, {
+      console.log('Sending reply to:', selectedThread.message_id);
+      
+      const response = await fetch(`/api/messages/${selectedThread.message_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          message: replyText,
+          message: messageToSend,
           user_id: user_id
         })
       });
 
-      if (response.ok) {
-        const newMessage = {
-          id: Date.now().toString(),
-          sender: 'seller',
-          content: replyText,
-          timestamp: new Date(),
-          senderName: 'You'
-        };
-        setThreadMessages([...threadMessages, newMessage]);
-        setReplyText('');
-      } else {
-        const errorData = await response.json();
-        alert('Failed to send message: ' + (errorData.error || 'Unknown error'));
+      const responseData = await response.json();
+      console.log('Reply response:', responseData);
+
+      if (!response.ok) {
+        // Remove the optimistic message on error
+        setThreadMessages(threadMessages);
+        setReplyText(messageToSend);
+        console.error('Reply error:', responseData);
+        alert('Failed to send message: ' + (responseData.error || 'Unknown error'));
       }
     } catch (error) {
+      // Remove the optimistic message on error
+      setThreadMessages(threadMessages);
+      setReplyText(messageToSend);
       console.error('Failed to send reply:', error);
-      alert('Failed to send message');
+      alert('Failed to send message: ' + error.message);
     } finally {
       setIsSending(false);
     }
