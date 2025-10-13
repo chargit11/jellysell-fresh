@@ -12,7 +12,6 @@ export default function Home() {
   const signUpRef = useRef(null);
   const [signInScale, setSignInScale] = useState(1);
   const [signUpScale, setSignUpScale] = useState(1);
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +60,7 @@ export default function Home() {
     recalc();
     window.addEventListener('resize', recalc);
     return () => window.removeEventListener('resize', recalc);
-  }, [showSignInModal, showSignUpModal, username, email, password]);
+  }, [showSignInModal, showSignUpModal, email, password]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -172,17 +171,6 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-center mb-4 sm:mb-6">Create your account</h2>
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter your username" className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
-                </div>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -241,7 +229,7 @@ export default function Home() {
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
             <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
+            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +243,7 @@ export default function Home() {
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
               <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
-              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
+              <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
             </div>
           </div>
         )}
