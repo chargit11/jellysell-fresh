@@ -279,9 +279,9 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#780036">Poshmark</text></svg>
-            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#E31C23">Depop</text></svg>
-            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#0066CC">Mercari</text></svg>
+            <img src="https://cdn.simpleicons.org/poshmark/780036" alt="Poshmark" className="h-8" />
+            <img src="https://cdn.simpleicons.org/depop/E31C23" alt="Depop" className="h-8" />
+            <img src="https://cdn.simpleicons.org/mercari/0066CC" alt="Mercari" className="h-8" />
           </div>
         </div>
       </section>
@@ -414,13 +414,17 @@ export default function Home() {
 
       <footer className="bg-slate-900 text-gray-400 py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-4 gap-24 mb-12">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-24 mb-12">
+            <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed" style={{ maxWidth: '620px', whiteSpace: 'normal' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+              <p className="text-sm text-gray-400 md:w-[500px] leading-relaxed md:leading-6">
+                This application uses the Etsy API but is not endorsed
+                <br className="hidden md:block" />
+                or certified by Etsy, Inc.
+              </p>
             </div>
             
             <div>
