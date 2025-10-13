@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {showSignInModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md relative max-h-[90vh] overflow-hidden transform scale-95 sm:scale-100">
             <button onClick={() => setShowSignInModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -76,7 +76,7 @@ export default function Home() {
               <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
               <span className="text-xl font-bold text-gray-900">jellysell</span>
             </div>
-            <h2 className="text-2xl font-bold text-center mb-6">Welcome back!</h2>
+            <h2 className="text-2xl font-bold text-center mb-4 sm:mb-6">Welcome back!</h2>
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -86,7 +86,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
                 </div>
               </div>
               <div>
@@ -97,7 +97,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg" required />
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-10 pr-12 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -107,13 +107,13 @@ export default function Home() {
                 </div>
               </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
+              <button type="submit" className="w-full py-2.5 sm:py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
               <div className="text-center"><a href="#" className="text-sm text-purple-600">Forgot your password?</a></div>
-              <div className="relative my-6">
+              <div className="relative my-5 sm:my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
               </div>
-              <button type="button" className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
+              <button type="button" className="w-full py-2.5 sm:py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -130,7 +130,7 @@ export default function Home() {
 
       {showSignUpModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md relative max-h-[90vh] overflow-hidden transform scale-95 sm:scale-100">
             <button onClick={() => setShowSignUpModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -140,7 +140,7 @@ export default function Home() {
               <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
               <span className="text-xl font-bold text-gray-900">jellysell</span>
             </div>
-            <h2 className="text-2xl font-bold text-center mb-6">Create your account</h2>
+            <h2 className="text-2xl font-bold text-center mb-4 sm:mb-6">Create your account</h2>
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -150,7 +150,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter your username" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter your username" className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
                 </div>
               </div>
               <div>
@@ -161,7 +161,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
                 </div>
               </div>
               <div>
@@ -172,7 +172,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg" required />
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-10 pr-12 py-2.5 sm:py-3 border border-gray-300 rounded-lg" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -182,12 +182,12 @@ export default function Home() {
                 </div>
               </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign Up</button>
-              <div className="relative my-6">
+              <button type="submit" className="w-full py-2.5 sm:py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign Up</button>
+              <div className="relative my-5 sm:my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
               </div>
-              <button type="button" className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
+              <button type="button" className="w-full py-2.5 sm:py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -391,7 +391,7 @@ export default function Home() {
                 <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed" style={{ maxWidth: '330px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+              <p className="text-sm text-gray-400 leading-relaxed" style={{ maxWidth: '520px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
             </div>
             
             <div>
