@@ -5,17 +5,20 @@ const SUPABASE_URL = 'https://qvhjmzdavsbauugubfcm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw';
 
 export async function POST(request) {
+  console.log('CREATE LISTING API CALLED');
+  
   try {
     const body = await request.json();
-    const { user_id, title, description, price, quantity, condition, images, type, vendor, tags } = body;
-
-    console.log('Creating listing for user:', user_id);
+    console.log('Request body:', body);
+    
+    const { user_id, title, description, price, quantity, condition, images, type, vendor, tags, category } = body;
 
     if (!user_id || !title || !price) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields: user_id, title, price' }, { status: 400 });
     }
 
     // 1. Get user's eBay token
+    console.log('Fetching eBay token for user:', user_id);
     const tokenResponse = await fetch(
       `${SUPABASE_URL}/rest/v1/user_tokens?user_id=eq.${user_id}&platform=eq.ebay&select=*`,
       {
@@ -27,14 +30,21 @@ export async function POST(request) {
     );
 
     const tokens = await tokenResponse.json();
+    console.log('Tokens found:', tokens?.length || 0);
     
     if (!tokens || tokens.length === 0) {
-      return NextResponse.json({ error: 'eBay not connected. Please connect your eBay account first.' }, { status: 401 });
+      return NextResponse.json({ 
+        error: 'eBay not connected. Please connect your eBay account first using the Chrome extension.' 
+      }, { status: 401 });
     }
 
     const ebayToken = tokens[0].access_token;
 
     // 2. Create listing on eBay using Trading API
+    console.log('Creating eBay listing...');
+    
+    const categoryID = getCategoryID(category);
+    
     const xmlPayload = `<?xml version="1.0" encoding="utf-8"?>
 <AddFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
   <RequesterCredentials>
@@ -44,9 +54,9 @@ export async function POST(request) {
   <WarningLevel>High</WarningLevel>
   <Item>
     <Title>${escapeXml(title)}</Title>
-    <Description><![CDATA[${description}]]></Description>
+    <Description><![CDATA[${description || 'No description provided'}]]></Description>
     <PrimaryCategory>
-      <CategoryID>260</CategoryID>
+      <CategoryID>${categoryID}</CategoryID>
     </PrimaryCategory>
     <StartPrice>${price}</StartPrice>
     <CategoryMappingAllowed>true</CategoryMappingAllowed>
@@ -57,11 +67,9 @@ export async function POST(request) {
     <ListingDuration>GTC</ListingDuration>
     <ListingType>FixedPriceItem</ListingType>
     <PaymentMethods>PayPal</PaymentMethods>
-    <PayPalEmailAddress>placeholder@email.com</PayPalEmailAddress>
-    <PictureDetails>
-      ${images && images.length > 0 ? images.map(img => `<PictureURL>${img}</PictureURL>`).join('') : '<PictureURL>https://via.placeholder.com/300</PictureURL>'}
-    </PictureDetails>
-    <PostalCode>95125</PostalCode>
+    <PayPalEmailAddress>seller@example.com</PayPalEmailAddress>
+    ${images && images.length > 0 ? images.slice(0, 12).map(img => `<PictureDetails><PictureURL>${img}</PictureURL></PictureDetails>`).join('') : ''}
+    <PostalCode>10001</PostalCode>
     <Quantity>${quantity}</Quantity>
     <ReturnPolicy>
       <ReturnsAcceptedOption>ReturnsAccepted</ReturnsAcceptedOption>
@@ -81,8 +89,6 @@ export async function POST(request) {
   </Item>
 </AddFixedPriceItemRequest>`;
 
-    console.log('Sending to eBay API...');
-
     const ebayResponse = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
       headers: {
@@ -95,7 +101,7 @@ export async function POST(request) {
     });
 
     const responseText = await ebayResponse.text();
-    console.log('eBay response:', responseText.substring(0, 1000));
+    console.log('eBay response (first 500 chars):', responseText.substring(0, 500));
 
     // Check if successful
     if (responseText.includes('<Ack>Success</Ack>') || responseText.includes('<Ack>Warning</Ack>')) {
@@ -106,27 +112,31 @@ export async function POST(request) {
       console.log('Successfully created eBay listing:', itemId);
 
       // 3. Save to Supabase for tracking
-      await fetch(`${SUPABASE_URL}/rest/v1/listings`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          user_id,
-          title,
-          description,
-          price,
-          quantity,
-          condition,
-          ebay_item_id: itemId,
-          platform: 'ebay',
-          status: 'active',
-          created_at: new Date().toISOString()
-        })
-      });
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/listings`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            user_id,
+            title,
+            description,
+            price,
+            quantity,
+            condition,
+            ebay_item_id: itemId,
+            platform: 'ebay',
+            status: 'active',
+            created_at: new Date().toISOString()
+          })
+        });
+      } catch (dbError) {
+        console.error('Failed to save to database, but listing was created on eBay:', dbError);
+      }
 
       return NextResponse.json({
         success: true,
@@ -136,7 +146,8 @@ export async function POST(request) {
     } else {
       // Extract error
       const errorMatch = responseText.match(/<LongMessage>(.*?)<\/LongMessage>/);
-      const errorMessage = errorMatch ? errorMatch[1] : 'eBay API returned error';
+      const shortErrorMatch = responseText.match(/<ShortMessage>(.*?)<\/ShortMessage>/);
+      const errorMessage = errorMatch ? errorMatch[1] : (shortErrorMatch ? shortErrorMatch[1] : 'eBay API returned error');
       
       console.error('eBay API error:', errorMessage);
       
@@ -156,6 +167,7 @@ export async function POST(request) {
 }
 
 function escapeXml(text) {
+  if (!text) return '';
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -173,4 +185,18 @@ function getConditionID(condition) {
     'USED_ACCEPTABLE': '3000'
   };
   return conditionMap[condition] || '1000';
+}
+
+function getCategoryID(category) {
+  const categoryMap = {
+    'clothing': '11450',
+    'electronics': '293',
+    'home': '11700',
+    'collectibles': '1',
+    'sporting': '888',
+    'toys': '220',
+    'books': '267',
+    'jewelry': '281'
+  };
+  return categoryMap[category] || '260'; // Default to general category
 }
