@@ -66,12 +66,17 @@ export default function Home() {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = {};
+      }
       if (response.ok) {
         localStorage.setItem('user_id', data.user_id);
         localStorage.setItem('user_email', data.email);
