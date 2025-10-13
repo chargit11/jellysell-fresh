@@ -197,7 +197,7 @@ export default function Home() {
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
             <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
             <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
           </div>
@@ -211,7 +211,7 @@ export default function Home() {
           <div className="md:hidden border-t border-gray-200 bg-white">
             <div className="px-6 py-4 space-y-4">
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
-              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+              <Link href="/pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
               <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
               <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
             </div>
@@ -385,7 +385,7 @@ export default function Home() {
               <h3 className="text-white font-semibold mb-4">Product</h3>
               <div className="space-y-3">
                 <a href="#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
-                <a href="#pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</a>
+                <Link href="/pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</Link>
               </div>
             </div>
             
