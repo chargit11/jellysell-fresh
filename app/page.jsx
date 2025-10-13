@@ -414,8 +414,8 @@ export default function Home() {
 
       <footer className="bg-slate-900 text-gray-400 py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-24 mb-12">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-24 mb-12">
+            <div>
               <div className="flex items-center gap-2 mb-4">
                 <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
                 <span className="text-lg font-bold text-white">jellysell</span>
