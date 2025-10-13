@@ -8,6 +8,12 @@ export default function Messages() {
   const [selectedFolder, setSelectedFolder] = useState('inbox');
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // New state for thread view
+  const [selectedThread, setSelectedThread] = useState(null);
+  const [threadMessages, setThreadMessages] = useState([]);
+  const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -51,6 +57,187 @@ export default function Messages() {
     return matchesSearch;
   });
 
+  // Open thread view
+  const handleMessageClick = async (message) => {
+    setSelectedThread(message);
+    setLoading(true);
+    
+    try {
+      const user_id = localStorage.getItem('user_id');
+      const response = await fetch(`/api/messages/${message.message_id}?user_id=${user_id}`);
+      const data = await response.json();
+      
+      // Transform the data to match the thread format
+      setThreadMessages(data.conversation || [
+        {
+          id: message.message_id,
+          sender: 'buyer',
+          content: message.body || message.subject,
+          timestamp: new Date(message.created_at),
+          senderName: message.sender || 'eBay User'
+        }
+      ]);
+    } catch (error) {
+      console.error('Failed to load thread:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send reply
+  const handleSendReply = async () => {
+    if (!replyText.trim() || isSending || !selectedThread) return;
+
+    setIsSending(true);
+    try {
+      const user_id = localStorage.getItem('user_id');
+      const response = await fetch(`/api/messages/${selectedThread.message_id}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: replyText,
+          user_id: user_id
+        })
+      });
+
+      if (response.ok) {
+        const newMessage = {
+          id: Date.now().toString(),
+          sender: 'seller',
+          content: replyText,
+          timestamp: new Date(),
+          senderName: 'You'
+        };
+        setThreadMessages([...threadMessages, newMessage]);
+        setReplyText('');
+      } else {
+        const errorData = await response.json();
+        alert('Failed to send message: ' + (errorData.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Failed to send reply:', error);
+      alert('Failed to send message');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply();
+    }
+  };
+
+  const formatTime = (date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(new Date(date));
+  };
+
+  // If a thread is selected, show the thread view
+  if (selectedThread) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col h-screen">
+          {/* Thread Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSelectedThread(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h2 className="text-lg font-semibold">{selectedThread.sender || 'eBay User'}</h2>
+                {selectedThread.subject && (
+                  <p className="text-sm text-gray-500">Re: {selectedThread.subject}</p>
+                )}
+              </div>
+            </div>
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
+                <p className="mt-4 text-gray-600">Loading messages...</p>
+              </div>
+            ) : (
+              threadMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'seller' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] ${
+                      message.sender === 'seller'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-900 border border-gray-200'
+                    } rounded-2xl px-4 py-3 shadow-sm`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        message.sender === 'seller' ? 'text-purple-100' : 'text-gray-500'
+                      }`}
+                    >
+                      {formatTime(message.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Reply Input */}
+          <div className="border-t border-gray-200 px-6 py-4 bg-white">
+            <div className="flex items-end gap-3">
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your reply"
+                className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[48px] max-h-[120px]"
+                rows={1}
+              />
+              <button
+                onClick={handleSendReply}
+                disabled={!replyText.trim() || isSending}
+                className="bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              >
+                {isSending ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              We scan and review messages for fraud prevention, policy enforcement, security, to provide support, and for similar purposes.{' '}
+              <a href="#" className="text-purple-600 hover:underline">Learn more</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise show the messages list (original view)
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -173,12 +360,17 @@ export default function Messages() {
                   {filteredMessages.map((message, idx) => (
                     <div
                       key={idx}
+                      onClick={() => handleMessageClick(message)}
                       className="flex items-center gap-4 px-8 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         checked={selectedMessages.includes(message.message_id)}
-                        onChange={() => toggleSelectMessage(message.message_id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleSelectMessage(message.message_id);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
                       
