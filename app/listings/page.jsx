@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
 export default function Listings() {
+  const router = useRouter();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPrice, setEditingPrice] = useState(null);
@@ -241,7 +243,10 @@ export default function Listings() {
                 Delete ({selectedListings.length})
               </button>
             )}
-            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
+            <button 
+              onClick={() => router.push('/listings/add')}
+              className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700"
+            >
               Add a product
             </button>
             <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
