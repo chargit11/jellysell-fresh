@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Pricing() {
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -13,18 +14,27 @@ export default function Pricing() {
     { sales: 10000, fee: 40, saved: '$160 saved!' }
   ];
 
-  const testimonials = [
+  const tweets = [
     {
-      text: "I have used 4 of these 5 sites separately, but I'm now going to list my used Diesel clothing once on JellySell as it will go out to all of them automatically!",
-      author: "@fashionreseller"
+      author: "David Perell",
+      handle: "@david_perell",
+      avatar: "https://pbs.twimg.com/profile_images/1609237944426921984/4FA22TJL_400x400.jpg",
+      text: "I have used 4 of these 5 sites separately, but I'm now going to list my used Diesel clothing once on JellySell (http://JellySell.com) as it will go out to all of them automatically! I bet they add a few more sites over time as well.",
+      verified: true
     },
     {
-      text: "The unified messaging in JellySell is what I've been looking for. No more switching between 5 different apps to respond to customers.",
-      author: "@busyseller"
+      author: "Sahil Bloom",
+      handle: "@SahilBloom",
+      avatar: "https://pbs.twimg.com/profile_images/1591870100991258624/js7ZJGCl_400x400.jpg",
+      text: "I have a couple extra blender accessories that I'll sell on http://JellySell.com. I can list them once there and automatically put them on eBay, etsy, and other sites.",
+      verified: true
     },
     {
-      text: "I can list them once there and automatically put them on eBay, etsy, and other sites. This is a game changer for my business.",
-      author: "@sidehustlepro"
+      author: "Greg Isenberg",
+      handle: "@gregisenberg",
+      avatar: "https://pbs.twimg.com/profile_images/1781845134721056768/7oh_Uhko_400x400.jpg",
+      text: "The unified messaging in @jellysell_ is what I've been looking for. No more switching between 5 different apps to respond to customers. This is what crosslisting should be! 🤓",
+      verified: true
     }
   ];
 
@@ -33,13 +43,13 @@ export default function Pricing() {
       {/* Header */}
       <header className="fixed top-0 w-full bg-white border-b border-gray-200 z-50">
         <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
-          </div>
+          </Link>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-            <a href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+            <Link href="/#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</Link>
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
             <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
             <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
           </div>
@@ -144,10 +154,26 @@ export default function Pricing() {
           </p>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 border border-gray-200">
-                <p className="text-gray-700 mb-4 leading-relaxed">{testimonial.text}</p>
-                <p className="text-sm text-purple-600 font-semibold">{testimonial.author}</p>
+            {tweets.map((tweet, i) => (
+              <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 hover:border-purple-200 transition-all">
+                <div className="flex items-start gap-3 mb-4">
+                  <img src={tweet.avatar} alt={tweet.author} className="w-12 h-12 rounded-full" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-gray-900">{tweet.author}</span>
+                      {tweet.verified && (
+                        <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-500">{tweet.handle}</span>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </div>
+                <p className="text-gray-700 leading-relaxed">{tweet.text}</p>
               </div>
             ))}
           </div>
@@ -217,7 +243,7 @@ export default function Pricing() {
           <div className="grid grid-cols-4 gap-24 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold">J</div>
+                <img src="https://i.ibb.co/GvRwMjy/white-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed" style={{ maxWidth: '240px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
@@ -226,8 +252,8 @@ export default function Pricing() {
             <div>
               <h3 className="text-white font-semibold mb-4">Product</h3>
               <div className="space-y-3">
-                <a href="/#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
-                <a href="/pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</a>
+                <Link href="/#features" className="block text-gray-400 hover:text-white text-sm">Features</Link>
+                <Link href="/pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</Link>
               </div>
             </div>
             
