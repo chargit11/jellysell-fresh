@@ -43,7 +43,7 @@ export async function GET(request, { params }) {
     const conversation = [{
       id: msg.message_id,
       sender: 'buyer',
-      content: msg.body || msg.subject,
+      content: msg.body || msg.subject || 'No message content',
       timestamp: msg.created_at,
       senderName: msg.sender
     }];
@@ -67,6 +67,9 @@ export async function POST(request, { params }) {
     const body = await request.json();
     const { message, user_id } = body;
 
+    console.log('Sending reply for message_id:', message_id);
+    console.log('User ID:', user_id);
+
     if (!user_id || !message?.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -83,6 +86,8 @@ export async function POST(request, { params }) {
     );
 
     const messages = await supabaseResponse.json();
+    console.log('Original message:', messages);
+
     if (!messages || messages.length === 0) {
       return NextResponse.json({ error: 'Original message not found' }, { status: 404 });
     }
@@ -101,8 +106,10 @@ export async function POST(request, { params }) {
     );
 
     const tokens = await tokenResponse.json();
+    console.log('Tokens found:', tokens?.length || 0);
+
     if (!tokens || tokens.length === 0) {
-      return NextResponse.json({ error: 'eBay not connected' }, { status: 401 });
+      return NextResponse.json({ error: 'eBay not connected. Please connect your eBay account.' }, { status: 401 });
     }
 
     const ebayToken = tokens[0].access_token;
@@ -120,6 +127,8 @@ export async function POST(request, { params }) {
     <Subject>Re: ${originalMessage.subject || 'Your message'}</Subject>
   </MemberMessage>
 </AddMemberMessageAAQToPartnerRequest>`;
+
+    console.log('Sending to eBay API...');
 
     const ebayResponse = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
@@ -143,7 +152,14 @@ export async function POST(request, { params }) {
         timestamp: new Date().toISOString()
       });
     } else {
-      throw new Error('eBay API returned error');
+      // Extract error from XML
+      const errorMatch = responseText.match(/<LongMessage>(.*?)<\/LongMessage>/);
+      const errorMessage = errorMatch ? errorMatch[1] : 'eBay API returned error';
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        details: responseText.substring(0, 500)
+      }, { status: 500 });
     }
 
   } catch (error) {
