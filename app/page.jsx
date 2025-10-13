@@ -8,7 +8,6 @@ export default function Home() {
   const [tweetsLoaded, setTweetsLoaded] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +64,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {showSignInModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowSignInModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -129,7 +128,7 @@ export default function Home() {
 
       {showSignUpModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowSignUpModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -141,17 +140,6 @@ export default function Home() {
             </div>
             <h2 className="text-2xl font-bold text-center mb-6">Create your account</h2>
             <form onSubmit={handleSignUp} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter your username" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
-                </div>
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
@@ -210,7 +198,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
+            <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
             <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
@@ -224,7 +212,7 @@ export default function Home() {
             <div className="px-6 py-4 space-y-4">
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
+              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
               <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
             </div>
           </div>
@@ -390,7 +378,7 @@ export default function Home() {
                 <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed" style={{ maxWidth: '330px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-xs">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
             </div>
             
             <div>
