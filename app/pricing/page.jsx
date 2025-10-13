@@ -226,7 +226,7 @@ export default function Pricing() {
           <div className="grid grid-cols-4 gap-24 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="https://i.ibb.co/GvRwMjy/white-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
+                <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
                 <span className="text-lg font-bold text-white">jellysell</span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed" style={{ maxWidth: '240px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
