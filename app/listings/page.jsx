@@ -1,554 +1,426 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
-export default function Listings() {
+export default function AddProduct() {
   const router = useRouter();
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingPrice, setEditingPrice] = useState(null);
-  const [editingStock, setEditingStock] = useState(null);
-  const [newPrice, setNewPrice] = useState('');
-  const [newStock, setNewStock] = useState('');
-  const [selectedListings, setSelectedListings] = useState([]);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const [condition, setCondition] = useState('NEW');
+  const [category, setCategory] = useState('');
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('Active');
+  const [type, setType] = useState('');
+  const [vendor, setVendor] = useState('');
+  const [tags, setTags] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const user_id = localStorage.getItem('user_id');
-    if (!user_id) { 
-      window.location.href = '/login'; 
-      return; 
-    }
-    fetch(`/api/listings?user_id=${user_id}`)
-      .then(res => res.json())
-      .then(data => { 
-        setListings(data.listings || []); 
-        setLoading(false); 
-      })
-      .catch(err => { 
-        console.error('Error:', err); 
-        setLoading(false); 
-      });
-  }, []);
-
-  const handlePriceDoubleClick = (listing) => { 
-    setEditingPrice(listing.listing_id); 
-    setNewPrice(listing.price.toString()); 
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const imageUrls = files.map(file => URL.createObjectURL(file));
+    setImages([...images, ...imageUrls]);
   };
 
-  const handleStockDoubleClick = (listing) => { 
-    setEditingStock(listing.listing_id); 
-    setNewStock((listing.quantity || 1).toString()); 
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const handlePriceSave = async (listing) => {
-    const user_id = localStorage.getItem('user_id');
-    
     try {
-      const response = await fetch('/api/ebay/update-price', {
+      const user_id = localStorage.getItem('user_id');
+      
+      const response = await fetch('/api/listings/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          listing_id: listing.listing_id,
-          price: parseFloat(newPrice),
-          user_id
+          user_id,
+          title,
+          description,
+          price: parseFloat(price),
+          quantity: parseInt(quantity),
+          condition,
+          category,
+          images,
+          type,
+          vendor,
+          tags: tags.split(',').map(t => t.trim())
         })
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert('Failed to update price: ' + data.error);
-        return;
+      if (response.ok) {
+        alert('Product listed successfully on eBay!');
+        router.push('/listings');
+      } else {
+        alert('Error: ' + (data.error || 'Failed to create listing'));
       }
-
-      setListings(listings.map(l => 
-        l.listing_id === listing.listing_id 
-          ? { ...l, price: parseFloat(newPrice) }
-          : l
-      ));
-
-      setEditingPrice(null);
-      setNewPrice('');
-      alert('Price updated successfully on eBay!');
     } catch (error) {
-      alert('Error: ' + error.message);
+      console.error('Error:', error);
+      alert('Failed to create listing');
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleStockSave = async (listing) => {
-    const user_id = localStorage.getItem('user_id');
-    
-    try {
-      const response = await fetch('/api/ebay/update-quantity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listing_id: listing.listing_id,
-          quantity: parseInt(newStock),
-          user_id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert('Failed to update quantity: ' + data.error);
-        return;
-      }
-
-      setListings(listings.map(l => 
-        l.listing_id === listing.listing_id 
-          ? { ...l, quantity: parseInt(newStock) }
-          : l
-      ));
-
-      setEditingStock(null);
-      setNewStock('');
-      alert('Quantity updated successfully on eBay!');
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
-
-  const handleDeleteListing = async (listingId) => {
-    if (!confirm('Are you sure you want to delete this listing?')) {
-      return;
-    }
-
-    const user_id = localStorage.getItem('user_id');
-
-    try {
-      const response = await fetch('/api/listings/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listing_id: listingId,
-          user_id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert('Failed to delete listing: ' + data.error);
-        return;
-      }
-
-      setListings(listings.filter(l => l.listing_id !== listingId));
-      setOpenMenuId(null);
-      alert('Listing deleted successfully!');
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedListings.length === 0) {
-      alert('Please select listings to delete');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete ${selectedListings.length} listing(s)?`)) {
-      return;
-    }
-
-    const user_id = localStorage.getItem('user_id');
-
-    try {
-      const response = await fetch('/api/listings/bulk-delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listing_ids: selectedListings,
-          user_id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert('Failed to delete listings: ' + data.error);
-        return;
-      }
-
-      setListings(listings.filter(l => !selectedListings.includes(l.listing_id)));
-      setSelectedListings([]);
-      alert(`${selectedListings.length} listing(s) deleted successfully!`);
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
-
-  const calculateQuality = (listing) => { 
-    let score = 0; 
-    if (listing.title && listing.title.length > 10) score += 33; 
-    if (listing.image) score += 33; 
-    if (listing.title && listing.title.length > 30) score += 34; 
-    if (score >= 80) return { label: 'Good', color: 'green' }; 
-    if (score >= 50) return { label: 'Fair', color: 'yellow' }; 
-    return { label: 'Poor', color: 'red' }; 
-  };
-
-  const toggleSelectListing = (listingId) => {
-    setSelectedListings(prev => 
-      prev.includes(listingId) 
-        ? prev.filter(id => id !== listingId)
-        : [...prev, listingId]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedListings.length === filteredListings.length) {
-      setSelectedListings([]);
-    } else {
-      setSelectedListings(filteredListings.map(l => l.listing_id));
-    }
-  };
-
-  const toggleMenu = (listingId) => {
-    setOpenMenuId(openMenuId === listingId ? null : listingId);
-  };
-
-  const filteredListings = listings.filter(listing => {
-    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
-
-  const tabs = [
-    { id: 'all', label: 'All', count: listings.length },
-    { id: 'live', label: 'Live', count: listings.length },
-    { id: 'reviewing', label: 'Reviewing', count: 0 },
-    { id: 'violation', label: 'Violation', count: 0},
-    { id: 'deactivated', label: 'Deactivated', count: 0 },
-    { id: 'draft', label: 'Draft', count: 0 },
-    { id: 'deleted', label: 'Deleted', count: 0 },
-  ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1">
-        <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Listings</h1>
-          <div className="flex gap-3">
-            {selectedListings.length > 0 && (
-              <button 
-                onClick={handleBulkDelete}
-                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
-              >
-                Delete ({selectedListings.length})
-              </button>
-            )}
-            <button 
-              onClick={() => router.push('/listings/add')}
-              className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700"
-            >
-              Add a product
-            </button>
-            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
-              Import Listing
-            </button>
-          </div>
-        </div>
-
-        <div className="px-8 pt-6 border-b border-gray-200">
-          <div className="flex gap-6">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-purple-600 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label} {tab.count > 0 && <span className="text-gray-400">{tab.count}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-8 pt-6 pb-4 flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search products"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-            Category
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4">
+          <button 
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-            Sort
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+          <h1 className="text-xl font-semibold">Add product</h1>
         </div>
 
-        <div className="px-8 pb-8">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
-              <p className="mt-4 text-gray-600">Loading listings...</p>
-            </div>
-          ) : filteredListings.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 text-lg">
-                {searchQuery ? 'No listings found matching your search.' : 'No listings found. Sync your eBay account using the Chrome extension.'}
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left w-12">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedListings.length === filteredListings.length && filteredListings.length > 0}
-                        onChange={toggleSelectAll}
-                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredListings.map((listing, idx) => { 
-                    const quality = calculateQuality(listing); 
-                    return (
-                      <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <input 
-                            type="checkbox"
-                            checked={selectedListings.includes(listing.listing_id)}
-                            onChange={() => toggleSelectListing(listing.listing_id)}
-                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                          />
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            {listing.image ? (
-                              <img 
-                                src={listing.image} 
-                                alt={listing.title} 
-                                className="w-12 h-12 object-cover rounded border border-gray-200" 
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">No image</span>
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">{listing.title}</p>
-                              <p className="text-xs text-gray-500">ID: {listing.listing_id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-600">
-                            <p className="font-semibold">0 sold</p>
-                            <p className="text-gray-400">0 views</p>
-                            <p className="text-gray-400">$0</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                            <span className="text-sm font-semibold text-gray-700">Live</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          {editingStock === listing.listing_id ? (
-                            <input 
-                              type="number" 
-                              value={newStock} 
-                              onChange={(e) => setNewStock(e.target.value)} 
-                              onBlur={() => handleStockSave(listing)} 
-                              onKeyDown={(e) => { 
-                                if (e.key === 'Enter') handleStockSave(listing); 
-                                if (e.key === 'Escape') { 
-                                  setEditingStock(null); 
-                                  setNewStock(''); 
-                                }
-                              }} 
-                              autoFocus 
-                              className="w-16 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                            />
-                          ) : (
-                            <span 
-                              className="text-sm text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
-                              onDoubleClick={() => handleStockDoubleClick(listing)} 
-                              title="Double-click to edit"
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-8">
+          <form onSubmit={handleSubmit} className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-3 gap-8">
+              {/* Left Column - Product Details */}
+              <div className="col-span-2 space-y-6">
+                {/* Title */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Short sleeve t-shirt"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Description
+                  </label>
+                  <div className="border border-gray-300 rounded-lg">
+                    <div className="border-b border-gray-300 px-3 py-2 flex items-center gap-2 bg-gray-50">
+                      <select className="text-sm border-none focus:outline-none bg-transparent">
+                        <option>Paragraph</option>
+                        <option>Heading 1</option>
+                        <option>Heading 2</option>
+                      </select>
+                      <div className="h-4 w-px bg-gray-300"></div>
+                      <button type="button" className="p-1 hover:bg-gray-200 rounded">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <button type="button" className="p-1 hover:bg-gray-200 rounded font-bold">I</button>
+                      <button type="button" className="p-1 hover:bg-gray-200 rounded underline">U</button>
+                      <button type="button" className="p-1 hover:bg-gray-200 rounded">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                      </button>
+                    </div>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Enter product description..."
+                      className="w-full px-4 py-3 border-none focus:outline-none min-h-[200px] resize-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Media */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Media
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="text-gray-500 mb-2">
+                        <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-gray-600">Add images or drag and drop</p>
+                    </label>
+                    {images.length > 0 && (
+                      <div className="mt-4 grid grid-cols-4 gap-2">
+                        {images.map((img, idx) => (
+                          <div key={idx} className="relative">
+                            <img src={img} alt="" className="w-full h-24 object-cover rounded-lg" />
+                            <button
+                              type="button"
+                              onClick={() => setImages(images.filter((_, i) => i !== idx))}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
                             >
-                              {listing.quantity || 0}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          {editingPrice === listing.listing_id ? (
-                            <div className="flex items-center gap-1">
-                              <span className="text-gray-500 text-sm">$</span>
-                              <input 
-                                type="number" 
-                                value={newPrice} 
-                                onChange={(e) => setNewPrice(e.target.value)} 
-                                onBlur={() => handlePriceSave(listing)} 
-                                onKeyDown={(e) => { 
-                                  if (e.key === 'Enter') handlePriceSave(listing); 
-                                  if (e.key === 'Escape') { 
-                                    setEditingPrice(null); 
-                                    setNewPrice(''); 
-                                  }
-                                }} 
-                                autoFocus 
-                                className="w-20 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                              />
-                            </div>
-                          ) : (
-                            <span 
-                              className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
-                              onDoubleClick={() => handlePriceDoubleClick(listing)} 
-                              title="Double-click to edit"
-                            >
-                              ${listing.price?.toFixed(2)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-1">
-                            <div className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded border border-gray-200">
-                              <img 
-                                src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
-                                alt="eBay" 
-                                className="w-4 h-auto"
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="text-sm font-semibold text-gray-700">{quality.label}</span>
-                            <div className="flex gap-1">
-                              <div className={`w-4 h-2 rounded-full ${
-                                quality.color === 'green' 
-                                  ? 'bg-green-500' 
-                                  : quality.color === 'yellow' 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-gray-300'
-                              }`}></div>
-                              <div className={`w-4 h-2 rounded-full ${
-                                quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
-                              }`}></div>
-                              <div className={`w-4 h-2 rounded-full ${
-                                quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
-                              }`}></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
-                            <button className="p-1.5 hover:bg-gray-100 rounded">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
-                            <div className="relative">
-                              <button 
-                                onClick={() => toggleMenu(listing.listing_id)}
-                                className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-0.5"
-                              >
-                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                              </button>
-                              
-                              {openMenuId === listing.listing_id && (
-                                <>
-                                  <div 
-                                    className="fixed inset-0 z-10" 
-                                    onClick={() => setOpenMenuId(null)}
-                                  ></div>
-                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                      View Details
-                                    </button>
-                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                      Edit Listing
-                                    </button>
-                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                      Duplicate
-                                    </button>
-                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                      Deactivate
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDeleteListing(listing.listing_id)}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ); 
-                  })}
-                </tbody>
-              </table>
-
-              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Total: {filteredListings.length}
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm text-gray-700">1</span>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <select className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>50/Page</option>
-                    <option>100/Page</option>
-                    <option>200/Page</option>
+                </div>
+
+                {/* Category */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-500"
+                  >
+                    <option value="">Choose a product category</option>
+                    <option value="clothing">Clothing, Shoes & Accessories</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="home">Home & Garden</option>
+                    <option value="collectibles">Collectibles</option>
+                    <option value="sporting">Sporting Goods</option>
+                    <option value="toys">Toys & Hobbies</option>
+                    <option value="books">Books, Movies & Music</option>
+                    <option value="jewelry">Jewelry & Watches</option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Determines tax rates and adds metafields to improve search, filters, and cross-channel sales
+                  </p>
+                </div>
+
+                {/* Pricing */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-4">
+                    Pricing
+                  </label>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Compare-at price</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <input
+                      type="checkbox"
+                      id="charge-tax"
+                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <label htmlFor="charge-tax" className="text-sm text-gray-700">
+                      Charge tax on this product
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Cost per item</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Profit</label>
+                      <input
+                        type="text"
+                        value="--"
+                        readOnly
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Margin</label>
+                      <input
+                        type="text"
+                        value="--"
+                        readOnly
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inventory */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Inventory
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-2">SKU (Stock Keeping Unit)</label>
+                      <input
+                        type="text"
+                        placeholder="Optional"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-2">Quantity</label>
+                      <input
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder="1"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Condition */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Condition
+                  </label>
+                  <select
+                    value={condition}
+                    onChange={(e) => setCondition(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="NEW">New</option>
+                    <option value="LIKE_NEW">Like New</option>
+                    <option value="USED_EXCELLENT">Used - Excellent</option>
+                    <option value="USED_GOOD">Used - Good</option>
+                    <option value="USED_ACCEPTABLE">Used - Acceptable</option>
                   </select>
                 </div>
               </div>
+
+              {/* Right Column - Organization */}
+              <div className="space-y-6">
+                {/* Status */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Status
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+
+                {/* Product Organization */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900">Product organization</h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-2">Type</label>
+                      <input
+                        type="text"
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-2">Vendor</label>
+                      <input
+                        type="text"
+                        value={vendor}
+                        onChange={(e) => setVendor(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="vintage, summer, cotton"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Separate tags with commas</p>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Footer Actions */}
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-400"
+              >
+                {loading ? 'Creating...' : 'Create Product'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
