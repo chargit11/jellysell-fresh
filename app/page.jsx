@@ -240,8 +240,8 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
+            <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg hover:border-gray-400">Sign In</button>
+            <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,8 +254,8 @@ export default function Home() {
             <div className="px-6 py-4 space-y-4">
               <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
               <a href="#pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
-              <button onClick={() => { setMobileMenuOpen(false); setShowSignUpModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
+              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 border-2 border-gray-300 text-gray-900 font-semibold rounded-lg text-center">Sign In</button>
+              <button onClick={() => { setMobileMenuOpen(false); setShowSignInModal(true); }} className="block w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg text-center">Get Started</button>
             </div>
           </div>
         )}
@@ -279,9 +279,9 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <img src="https://cdn.simpleicons.org/poshmark/780036" alt="Poshmark" className="h-8" />
-            <img src="https://cdn.simpleicons.org/depop/E31C23" alt="Depop" className="h-8" />
-            <img src="https://cdn.simpleicons.org/mercari/0066CC" alt="Mercari" className="h-8" />
+            <img src="https://logo.clearbit.com/poshmark.com?size=128" alt="Poshmark" className="h-8" />
+            <img src="https://logo.clearbit.com/depop.com?size=128" alt="Depop" className="h-8" />
+            <img src="https://logo.clearbit.com/mercari.com?size=128" alt="Mercari" className="h-8" />
           </div>
         </div>
       </section>
