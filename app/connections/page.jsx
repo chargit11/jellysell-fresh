@@ -1,3 +1,4 @@
+// app/connections/page.jsx
 'use client';
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
@@ -111,35 +112,35 @@ export default function Connections() {
     {
       id: 'ebay',
       name: 'eBay',
-      description: "World's largest online marketplace. List your items to reach buyers in 190+ countries globally.",
+      description: "World's largest online marketplace. List your items to reach buyers globally.",
       logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg',
       bgColor: 'bg-blue-50'
     },
     {
       id: 'etsy',
       name: 'Etsy',
-      description: 'The global marketplace for unique and creative goods. Connect to reach millions of buyers worldwide.',
+      description: 'Global marketplace for unique and creative goods.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
       bgColor: 'bg-orange-50'
     },
     {
       id: 'poshmark',
       name: 'Poshmark',
-      description: 'Social commerce marketplace for fashion. Connect with style-conscious buyers and sellers.',
+      description: 'Social commerce marketplace for fashion.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741',
       bgColor: 'bg-purple-50'
     },
     {
       id: 'depop',
       name: 'Depop',
-      description: 'Mobile marketplace for buying and selling unique fashion. Connect with Gen Z shoppers.',
+      description: 'Mobile marketplace for unique fashion.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/1200px-Depop_logo.svg.png?20180616154725',
       bgColor: 'bg-red-50'
     },
     {
       id: 'mercari',
       name: 'Mercari',
-      description: 'Simple selling marketplace. List items easily and reach millions of buyers in the US and Japan.',
+      description: 'Simple selling marketplace for buyers.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145',
       bgColor: 'bg-blue-50'
     }
@@ -150,64 +151,64 @@ export default function Connections() {
   const allConnected = connectedCount === totalPlatforms;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
-      <div className="flex-1">
-        <div className="px-8 py-6 border-b border-gray-200 bg-white">
-          <h1 className="text-xl font-semibold text-gray-900">Connections</h1>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="px-6 py-3 border-b border-gray-200 bg-white">
+          <h1 className="text-lg font-semibold text-gray-900">Connections</h1>
         </div>
 
-        <div className="p-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Platform Connections & Integrations</h2>
-            <p className="text-gray-600 text-sm">Connect your shop to multiple marketplaces and reach new audiences</p>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Platform Connections</h2>
+            <p className="text-gray-600 text-xs">Connect your shop to multiple marketplaces</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">Connected Platforms</h3>
-                <svg className={`w-5 h-5 ${allConnected ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-700">Connected Platforms</h3>
+                <svg className={`w-4 h-4 ${allConnected ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-gray-900">{connectedCount}</span>
-                <span className="text-sm text-gray-500">out of {totalPlatforms} platforms</span>
+                <span className="text-2xl font-bold text-gray-900">{connectedCount}</span>
+                <span className="text-xs text-gray-500">out of {totalPlatforms}</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">Total Reach</h3>
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xs font-medium text-gray-700">Total Reach</h3>
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-gray-900">325k+</span>
-                <span className="text-sm text-gray-500">Potential buyers</span>
+                <span className="text-2xl font-bold text-gray-900">325k+</span>
+                <span className="text-xs text-gray-500">Buyers</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {platforms.map((platform) => (
-              <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-14 h-14 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
-                    <img src={platform.logo} alt={platform.name} className="w-10 h-10 object-contain" />
+              <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-lg transition-shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`w-12 h-12 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
+                    <img src={platform.logo} alt={platform.name} className="w-8 h-8 object-contain" />
                   </div>
                   {connections[platform.id] ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Connected
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                       Not Connected
@@ -215,20 +216,20 @@ export default function Connections() {
                   )}
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{platform.name}</h3>
-                <p className="text-xs text-gray-600 mb-3 min-h-[48px]">{platform.description}</p>
+                <h3 className="text-base font-bold text-gray-900 mb-1">{platform.name}</h3>
+                <p className="text-xs text-gray-600 mb-2 h-8">{platform.description}</p>
 
                 {connections[platform.id] ? (
                   <button
                     onClick={() => handleDisconnect(platform.id)}
-                    className="w-full px-3 py-2 border border-red-600 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
+                    className="w-full px-2 py-1.5 border border-red-600 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors"
                   >
                     Disconnect
                   </button>
                 ) : (
                   <button
                     onClick={() => handleConnect(platform.id)}
-                    className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                    className="w-full px-2 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors"
                   >
                     Connect
                   </button>
