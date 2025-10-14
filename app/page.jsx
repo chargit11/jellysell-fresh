@@ -255,7 +255,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Unified Dashboard</h3>
               <p className="text-gray-600 mb-6">Monitor all your sales, inventory, and performance metrics in one place</p>
               <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
-                <img src="https://placehold.co/1200x700/f3f4f6/9333ea/png?text=Dashboard" alt="Dashboard" className="w-full" />
+                <img src="https://i.ibb.co/cWfZQPL/Copy-of-Final-Exam-Card3.png" alt="Dashboard" className="w-full" />
               </div>
             </div>
           </div>
