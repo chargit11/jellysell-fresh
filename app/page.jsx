@@ -237,7 +237,7 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-12">
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#780036">Poshmark</text></svg>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741" alt="Poshmark" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145" alt="Depop" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/640px-Depop_logo.svg.png" alt="Mercari" className="h-8" />
           </div>
