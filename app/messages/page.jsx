@@ -60,45 +60,15 @@ export default function Messages() {
   // Open thread view
   const handleMessageClick = async (message) => {
     setSelectedThread(message);
-    setLoading(true);
     
-    try {
-      const user_id = localStorage.getItem('user_id');
-      const response = await fetch(`/api/messages/${message.message_id}?user_id=${user_id}`);
-      
-      if (!response.ok) {
-        console.error('Failed to fetch thread:', response.status);
-        // Fall back to showing just the original message
-        setThreadMessages([{
-          id: message.message_id,
-          sender: 'buyer',
-          content: message.body || message.subject,
-          timestamp: new Date(message.created_at),
-          senderName: message.sender || 'eBay User'
-        }]);
-      } else {
-        const data = await response.json();
-        setThreadMessages(data.conversation || [{
-          id: message.message_id,
-          sender: 'buyer',
-          content: message.body || message.subject,
-          timestamp: new Date(message.created_at),
-          senderName: message.sender || 'eBay User'
-        }]);
-      }
-    } catch (error) {
-      console.error('Failed to load thread:', error);
-      // Show the message anyway
-      setThreadMessages([{
-        id: message.message_id,
-        sender: 'buyer',
-        content: message.body || message.subject,
-        timestamp: new Date(message.created_at),
-        senderName: message.sender || 'eBay User'
-      }]);
-    } finally {
-      setLoading(false);
-    }
+    // Show the message body immediately
+    setThreadMessages([{
+      id: message.message_id,
+      sender: 'buyer',
+      content: message.body || message.subject || 'No message content',
+      timestamp: new Date(message.created_at),
+      senderName: message.sender || 'eBay User'
+    }]);
   };
 
   // Send reply
@@ -132,19 +102,29 @@ export default function Messages() {
         })
       });
 
-      const responseData = await response.json();
+      // Check if response has content before trying to parse JSON
+      const contentType = response.headers.get('content-type');
+      let responseData = null;
+      
+      if (contentType && contentType.includes('application/json')) {
+        const text = await response.text();
+        if (text) {
+          responseData = JSON.parse(text);
+        }
+      }
+
       console.log('Reply response:', responseData);
 
       if (!response.ok) {
         // Remove the optimistic message on error
-        setThreadMessages(threadMessages);
+        setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
         setReplyText(messageToSend);
         console.error('Reply error:', responseData);
-        alert('Failed to send message: ' + (responseData.error || 'Unknown error'));
+        alert('Failed to send message: ' + (responseData?.error || 'Unknown error'));
       }
     } catch (error) {
       // Remove the optimistic message on error
-      setThreadMessages(threadMessages);
+      setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
       setReplyText(messageToSend);
       console.error('Failed to send reply:', error);
       alert('Failed to send message: ' + error.message);
@@ -201,36 +181,29 @@ export default function Messages() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
-                <p className="mt-4 text-gray-600">Loading messages...</p>
-              </div>
-            ) : (
-              threadMessages.map((message) => (
+            {threadMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.sender === 'seller' ? 'justify-end' : 'justify-start'}`}
+              >
                 <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'seller' ? 'justify-end' : 'justify-start'}`}
+                  className={`max-w-[70%] ${
+                    message.sender === 'seller'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white text-gray-900 border border-gray-200'
+                  } rounded-2xl px-4 py-3 shadow-sm`}
                 >
-                  <div
-                    className={`max-w-[70%] ${
-                      message.sender === 'seller'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white text-gray-900 border border-gray-200'
-                    } rounded-2xl px-4 py-3 shadow-sm`}
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      message.sender === 'seller' ? 'text-purple-100' : 'text-gray-500'
+                    }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        message.sender === 'seller' ? 'text-purple-100' : 'text-gray-500'
-                      }`}
-                    >
-                      {formatTime(message.timestamp)}
-                    </p>
-                  </div>
+                    {formatTime(message.timestamp)}
+                  </p>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
 
           {/* Reply Input */}
