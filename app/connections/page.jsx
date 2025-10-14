@@ -112,35 +112,35 @@ export default function Connections() {
     {
       id: 'ebay',
       name: 'eBay',
-      description: "World's largest online marketplace. List your items to reach buyers globally.",
+      description: "World's largest online marketplace.",
       logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg',
       bgColor: 'bg-blue-50'
     },
     {
       id: 'etsy',
       name: 'Etsy',
-      description: 'Global marketplace for unique and creative goods.',
+      description: 'Marketplace for unique goods.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
       bgColor: 'bg-orange-50'
     },
     {
       id: 'poshmark',
       name: 'Poshmark',
-      description: 'Social commerce marketplace for fashion.',
+      description: 'Social commerce for fashion.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741',
       bgColor: 'bg-purple-50'
     },
     {
       id: 'depop',
       name: 'Depop',
-      description: 'Mobile marketplace for unique fashion.',
+      description: 'Mobile fashion marketplace.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/1200px-Depop_logo.svg.png?20180616154725',
       bgColor: 'bg-red-50'
     },
     {
       id: 'mercari',
       name: 'Mercari',
-      description: 'Simple selling marketplace for buyers.',
+      description: 'Simple selling marketplace.',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145',
       bgColor: 'bg-blue-50'
     }
@@ -151,21 +151,21 @@ export default function Connections() {
   const allConnected = connectedCount === totalPlatforms;
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-6 py-3 border-b border-gray-200 bg-white">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <div className="px-6 py-2.5 border-b border-gray-200 bg-white flex-shrink-0">
           <h1 className="text-lg font-semibold text-gray-900">Connections</h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Platform Connections</h2>
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="mb-3">
+            <h2 className="text-xl font-bold text-gray-900mb-1">Platform Connections</h2>
             <p className="text-gray-600 text-xs">Connect your shop to multiple marketplaces</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-3">
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-2.5">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-xs font-medium text-gray-700">Connected Platforms</h3>
                 <svg className={`w-4 h-4 ${allConnected ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,7 +178,7 @@ export default function Connections() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-2.5">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-xs font-medium text-gray-700">Total Reach</h3>
                 <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,20 +194,20 @@ export default function Connections() {
 
           <div className="grid grid-cols-3 gap-3">
             {platforms.map((platform) => (
-              <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-lg transition-shadow">
+              <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-2">
-                  <div className={`w-12 h-12 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
-                    <img src={platform.logo} alt={platform.name} className="w-8 h-8 object-contain" />
+                  <div className={`w-11 h-11 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
+                    <img src={platform.logo} alt={platform.name} className="w-7 h-7 object-contain" />
                   </div>
                   {connections[platform.id] ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Connected
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -216,8 +216,8 @@ export default function Connections() {
                   )}
                 </div>
 
-                <h3 className="text-base font-bold text-gray-900 mb-1">{platform.name}</h3>
-                <p className="text-xs text-gray-600 mb-2 h-8">{platform.description}</p>
+                <h3 className="text-sm font-bold text-gray-900 mb-1">{platform.name}</h3>
+                <p className="text-xs text-gray-600 mb-2 h-7 leading-tight">{platform.description}</p>
 
                 {connections[platform.id] ? (
                   <button
