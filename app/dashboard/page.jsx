@@ -50,7 +50,7 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
-            <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-200 rounded">
+            <div className="h-48 flex items-center justify-center border-2 border-dashed border-gray-200 rounded">
               <div className="text-center text-gray-400">
                 <div className="text-6xl mb-2">📈</div>
                 <p className="font-medium">Analytics chart will appear here</p>
