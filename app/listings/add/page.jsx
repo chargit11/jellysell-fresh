@@ -1,5 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { useState } from 'react';
 
@@ -24,10 +25,10 @@ export default function AddListingPage() {
       <Sidebar />
       <div className="flex-1">
         <div className="px-8 py-6 border-b border-gray-200 flex items-center gap-4">
-          <button onClick={handleBack} className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white">Back</button>
+          <Link href="/listings" className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white">Back</Link>
           <h1 className="text-xl font-semibold text-gray-900">Add Product</h1>
           <div className="ml-auto flex items-center gap-3">
-            <button onClick={handleBack} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white">Cancel</button>
+            <Link href="/listings" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white">Cancel</Link>
             <button onClick={handleSave} className="px-5 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700">Save Product</button>
           </div>
         </div>
