@@ -17,9 +17,10 @@ export default function Listings() {
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
-    if (!user_id) { 
-      window.location.href = '/login'; 
-      return; 
+    if (!user_id) {
+      // Allow access to the page even if not signed in
+      setLoading(false);
+      return;
     }
     fetch(`/api/listings?user_id=${user_id}`)
       .then(res => res.json())
