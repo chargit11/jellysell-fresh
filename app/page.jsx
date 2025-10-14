@@ -238,8 +238,8 @@ export default function Home() {
             <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
             <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
             <svg className="h-8" viewBox="0 0 200 50" fill="none"><text x="10" y="35" fontFamily="Arial" fontSize="28" fontWeight="bold" fill="#780036">Poshmark</text></svg>
-            <img src="https://brandlogos.net/wp-content/uploads/2022/09/depop-logo_brandlogos.net_thf10.png" alt="Depop" className="h-13" />
-            <img src="https://brandlogos.net/wp-content/uploads/2022/07/mercari-logo.png" alt="Mercari" className="h-13" />
+            <img src="https://brandlogos.net/wp-content/uploads/2022/09/depop-logo_brandlogos.net_thf10.png" alt="Depop" className="h-12" />
+            <img src="https://brandlogos.net/wp-content/uploads/2022/07/mercari-logo.png" alt="Mercari" className="h-12" />
           </div>
         </div>
       </section>
