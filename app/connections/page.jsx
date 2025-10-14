@@ -53,7 +53,7 @@ export default function Connections() {
 
     try {
       const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
-      const redirectUri = encodeURIComponent('https://jellysell-fresh-6pnt.vercel.app/oauth/ebay');
+      const redirectUri = encodeURIComponent('https://jellysell.com/oauth/ebay');
       const state = Math.random().toString(36).substring(7);
       const scopes = encodeURIComponent([
         'https://api.ebay.com/oauth/api_scope',
@@ -109,39 +109,39 @@ export default function Connections() {
 
   const platforms = [
     {
-      id: 'etsy',
-      name: 'Etsy',
-      description: 'The global marketplace for unique and creative goods. Connect to reach millions of buyers worldwide.',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
-      bgColor: 'bg-orange-100'
-    },
-    {
       id: 'ebay',
       name: 'eBay',
       description: "World's largest online marketplace. List your items to reach buyers in 190+ countries globally.",
       logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg',
-      bgColor: 'bg-blue-100'
+      bgColor: 'bg-blue-50'
+    },
+    {
+      id: 'etsy',
+      name: 'Etsy',
+      description: 'The global marketplace for unique and creative goods. Connect to reach millions of buyers worldwide.',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg',
+      bgColor: 'bg-orange-50'
     },
     {
       id: 'poshmark',
       name: 'Poshmark',
       description: 'Social commerce marketplace for fashion. Connect with style-conscious buyers and sellers.',
-      logo: '👗',
-      bgColor: 'bg-purple-100'
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741',
+      bgColor: 'bg-purple-50'
     },
     {
       id: 'depop',
       name: 'Depop',
       description: 'Mobile marketplace for buying and selling unique fashion. Connect with Gen Z shoppers.',
-      logo: '🛍️',
-      bgColor: 'bg-red-100'
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/1200px-Depop_logo.svg.png?20180616154725',
+      bgColor: 'bg-red-50'
     },
     {
       id: 'mercari',
       name: 'Mercari',
       description: 'Simple selling marketplace. List items easily and reach millions of buyers in the US and Japan.',
-      logo: '🏪',
-      bgColor: 'bg-blue-100'
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145',
+      bgColor: 'bg-blue-50'
     }
   ];
 
@@ -196,11 +196,7 @@ export default function Connections() {
               <div key={platform.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-16 h-16 ${platform.bgColor} rounded-lg flex items-center justify-center`}>
-                    {platform.logo.startsWith('http') ? (
-                      <img src={platform.logo} alt={platform.name} className="w-10 h-10 object-contain" />
-                    ) : (
-                      <span className="text-3xl">{platform.logo}</span>
-                    )}
+                    <img src={platform.logo} alt={platform.name} className="w-12 h-12 object-contain" />
                   </div>
                   {connections[platform.id] ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
