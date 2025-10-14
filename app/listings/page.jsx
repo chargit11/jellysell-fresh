@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
 export default function Listings() {
@@ -241,9 +242,9 @@ export default function Listings() {
                 Delete ({selectedListings.length})
               </button>
             )}
-            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
+            <Link href="/listings/add" className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
               Add a product
-            </button>
+            </Link>
             <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
               Import Listing
             </button>
