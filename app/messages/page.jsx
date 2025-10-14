@@ -15,6 +15,52 @@ export default function Messages() {
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  // Function to strip HTML tags and decode HTML entities
+  const stripHtml = (html) => {
+    if (!html) return '';
+    
+    // Create a temporary div element
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = html;
+    
+    // Get the text content
+    let text = tmp.textContent || tmp.innerText || '';
+    
+    // Clean up extra whitespace
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    // If the text is still too long or looks like raw HTML, try to extract meaningful content
+    if (text.length > 500 || text.includes('<!DOCTYPE') || text.includes('<html')) {
+      // This is likely a full HTML email, try to extract just meaningful text
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Remove script and style elements
+      const scripts = doc.querySelectorAll('script, style');
+      scripts.forEach(el => el.remove());
+      
+      // Get paragraphs and headings
+      const meaningfulContent = [];
+      const elements = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+      
+      elements.forEach(el => {
+        const text = el.textContent?.trim();
+        if (text && text.length > 10 && text.length < 300) {
+          meaningfulContent.push(text);
+        }
+      });
+      
+      if (meaningfulContent.length > 0) {
+        return meaningfulContent.slice(0, 5).join('\n\n');
+      }
+      
+      // Fallback: just get body text
+      return doc.body?.textContent?.replace(/\s+/g, ' ').trim().substring(0, 500) || '(No readable content)';
+    }
+    
+    return text;
+  };
+
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
     if (!user_id) {
@@ -61,11 +107,14 @@ export default function Messages() {
   const handleMessageClick = async (message) => {
     setSelectedThread(message);
     
+    // Strip HTML from the message body before displaying
+    const cleanContent = stripHtml(message.body) || message.subject || 'No message content';
+    
     // Show the message body immediately
     setThreadMessages([{
       id: message.message_id,
       sender: 'buyer',
-      content: message.body || message.subject || 'No message content',
+      content: cleanContent,
       timestamp: new Date(message.created_at),
       senderName: message.sender || 'eBay User'
     }]);
