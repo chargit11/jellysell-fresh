@@ -1,11 +1,12 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   
   const navItems = [
     { name: 'Dashboard', icon: '📊', path: '/dashboard', badge: null },
@@ -15,6 +16,12 @@ export default function Sidebar() {
     { name: 'Finances', icon: '💰', path: '/finances', badge: null },
     { name: 'Connections', icon: '🔗', path: '/connections', badge: null },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    router.push('/');
+  };
 
   return (
     <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 sticky top-0`}>
@@ -69,7 +76,10 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <button className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 w-full ${collapsed ? 'justify-center' : ''}`}>
+        <button 
+          onClick={handleLogout}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 w-full ${collapsed ? 'justify-center' : ''}`}
+        >
           <span>🚪</span>
           {!collapsed && <span className="font-medium">Log out</span>}
         </button>
