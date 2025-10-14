@@ -364,7 +364,7 @@ export default function Home() {
       <section className="py-24 px-6 bg-purple-600">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
-          <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell to manage their multi-platform businesses.</p>
+          <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell® to manage their multi-platform businesses.</p>
           <button onClick={() => setShowSignUpModal(true)} className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</button>
           <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
         </div>
