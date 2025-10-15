@@ -15,47 +15,40 @@ export default function Messages() {
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Function to strip HTML tags and decode HTML entities
   // Function to strip HTML tags and extract readable text
-const stripHtml = (html) => {
-  if (!html) return 'No message content';
-  
-  // If it's a full HTML document (email), extract meaningful content
-  if (html.includes('<!DOCTYPE') || html.includes('<html')) {
-    try {
-      // Remove all script and style tags and their content
-      let cleaned = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-      cleaned = cleaned.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-      
-      // Remove all HTML tags
-      cleaned = cleaned.replace(/<[^>]+>/g, ' ');
-      
-      // Decode HTML entities
-      cleaned = cleaned.replace(/&nbsp;/g, ' ');
-      cleaned = cleaned.replace(/&amp;/g, '&');
-      cleaned = cleaned.replace(/&lt;/g, '<');
-      cleaned = cleaned.replace(/&gt;/g, '>');
-      cleaned = cleaned.replace(/&quot;/g, '"');
-      cleaned = cleaned.replace(/&#39;/g, "'");
-      cleaned = cleaned.replace(/&zwnj;/g, '');
-      
-      // Clean up whitespace
-      cleaned = cleaned.replace(/\s+/g, ' ').trim();
-      
-      // If still too long or looks like junk, return a message
-      if (cleaned.length > 1000 || cleaned.length < 10) {
-        return 'This appears to be a marketing email from eBay. Please check your eBay account for the full message.';
-      }
-      
-      return cleaned.substring(0, 500);
-    } catch (e) {
-      return 'Unable to display message content. Please check your eBay account.';
+  const stripHtml = (html) => {
+    if (!html) return 'No message content';
+    
+    // First, decode HTML entities
+    const decodeHtml = (text) => {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = text;
+      return txt.value;
+    };
+    
+    // Decode the escaped HTML
+    let decoded = decodeHtml(html);
+    
+    // If it's a full HTML document (marketing email from eBay)
+    if (decoded.includes('<!DOCTYPE') || decoded.includes('<html')) {
+      return "This is a marketing email from eBay about your listings. The full content can be viewed on eBay's website.";
     }
-  }
-  
-  // For regular text messages, just remove HTML tags
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-};
+    
+    // For regular messages, strip tags and clean up
+    decoded = decoded.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    decoded = decoded.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    decoded = decoded.replace(/<[^>]+>/g, ' ');
+    decoded = decoded.replace(/&nbsp;/g, ' ');
+    decoded = decoded.replace(/&amp;/g, '&');
+    decoded = decoded.replace(/&lt;/g, '<');
+    decoded = decoded.replace(/&gt;/g, '>');
+    decoded = decoded.replace(/&quot;/g, '"');
+    decoded = decoded.replace(/&#39;/g, "'");
+    decoded = decoded.replace(/&zwnj;/g, '');
+    decoded = decoded.replace(/\s+/g, ' ').trim();
+    
+    return decoded || 'No message content available';
+  };
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
