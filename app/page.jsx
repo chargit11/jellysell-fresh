@@ -222,7 +222,7 @@ export default function Home() {
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell® is the ultimate crosslisting platform that helps you expand your reach across multiple marketplaces while managing everything from a single, powerful dashboard.</p>
+          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell® is the FASTEST way to sell something online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</button>
             <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
