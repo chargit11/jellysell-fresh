@@ -16,50 +16,46 @@ export default function Messages() {
   const [isSending, setIsSending] = useState(false);
 
   // Function to strip HTML tags and decode HTML entities
-  const stripHtml = (html) => {
-    if (!html) return '';
-    
-    // Create a temporary div element
-    const tmp = document.createElement('DIV');
-    tmp.innerHTML = html;
-    
-    // Get the text content
-    let text = tmp.textContent || tmp.innerText || '';
-    
-    // Clean up extra whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    
-    // If the text is still too long or looks like raw HTML, try to extract meaningful content
-    if (text.length > 500 || text.includes('<!DOCTYPE') || text.includes('<html')) {
-      // This is likely a full HTML email, try to extract just meaningful text
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+  // Function to strip HTML tags and extract readable text
+const stripHtml = (html) => {
+  if (!html) return 'No message content';
+  
+  // If it's a full HTML document (email), extract meaningful content
+  if (html.includes('<!DOCTYPE') || html.includes('<html')) {
+    try {
+      // Remove all script and style tags and their content
+      let cleaned = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      cleaned = cleaned.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
       
-      // Remove script and style elements
-      const scripts = doc.querySelectorAll('script, style');
-      scripts.forEach(el => el.remove());
+      // Remove all HTML tags
+      cleaned = cleaned.replace(/<[^>]+>/g, ' ');
       
-      // Get paragraphs and headings
-      const meaningfulContent = [];
-      const elements = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+      // Decode HTML entities
+      cleaned = cleaned.replace(/&nbsp;/g, ' ');
+      cleaned = cleaned.replace(/&amp;/g, '&');
+      cleaned = cleaned.replace(/&lt;/g, '<');
+      cleaned = cleaned.replace(/&gt;/g, '>');
+      cleaned = cleaned.replace(/&quot;/g, '"');
+      cleaned = cleaned.replace(/&#39;/g, "'");
+      cleaned = cleaned.replace(/&zwnj;/g, '');
       
-      elements.forEach(el => {
-        const text = el.textContent?.trim();
-        if (text && text.length > 10 && text.length < 300) {
-          meaningfulContent.push(text);
-        }
-      });
+      // Clean up whitespace
+      cleaned = cleaned.replace(/\s+/g, ' ').trim();
       
-      if (meaningfulContent.length > 0) {
-        return meaningfulContent.slice(0, 5).join('\n\n');
+      // If still too long or looks like junk, return a message
+      if (cleaned.length > 1000 || cleaned.length < 10) {
+        return 'This appears to be a marketing email from eBay. Please check your eBay account for the full message.';
       }
       
-      // Fallback: just get body text
-      return doc.body?.textContent?.replace(/\s+/g, ' ').trim().substring(0, 500) || '(No readable content)';
+      return cleaned.substring(0, 500);
+    } catch (e) {
+      return 'Unable to display message content. Please check your eBay account.';
     }
-    
-    return text;
-  };
+  }
+  
+  // For regular text messages, just remove HTML tags
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
