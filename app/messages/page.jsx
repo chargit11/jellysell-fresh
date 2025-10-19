@@ -15,27 +15,60 @@ export default function Messages() {
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Function to decode and clean HTML content
-  const cleanHtmlContent = (html) => {
+  // Enhanced function to strip HTML tags and extract readable text
+  const stripHtml = (html) => {
     if (!html) return 'No message content';
     
-    // Decode HTML entities
+    // First, decode HTML entities
     const decodeHtml = (text) => {
       const txt = document.createElement('textarea');
       txt.innerHTML = text;
       return txt.value;
     };
     
-    let decoded = decodeHtml(html);
-    
-    // For marketing emails from eBay, give a summary
-    if (decoded.includes('Your feedback helps') || 
-        decoded.includes('Rate purchase') || 
-        decoded.includes('Share feedback')) {
-      return "This is a marketing email from eBay about your listings. The full content can be viewed on eBay's website.";
+    // Check for eBay marketing emails first
+    if (html.includes('eBay') && (
+        html.includes('share feedback') || 
+        html.includes('Rate purchase') || 
+        html.includes('Your feedback helps'))) {
+      
+      // Extract meaningful content from eBay marketing emails
+      const contentRegex = /Your feedback helps.*?Share feedback|Your review matters.*?Rate purchase|Rate purchase/gi;
+      const matches = html.match(contentRegex);
+      
+      if (matches && matches.length > 0) {
+        // Clean up the extracted content
+        let ebayContent = matches.join('\n\n');
+        ebayContent = ebayContent.replace(/<[^>]+>/g, ' ');
+        ebayContent = ebayContent.replace(/\s+/g, ' ').trim();
+        
+        // Add a cleaner summary
+        return `eBay is requesting feedback for your recent purchases.`;
+      }
     }
     
-    // Clean up HTML tags
+    // Decode the escaped HTML
+    let decoded = decodeHtml(html);
+    
+    // Special handling for full HTML documents
+    if (decoded.includes('<!DOCTYPE') || decoded.includes('<html')) {
+      try {
+        // Try to parse and extract the actual content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(decoded, 'text/html');
+        
+        // Extract all text content
+        if (doc.body) {
+          let bodyText = doc.body.textContent;
+          bodyText = bodyText.replace(/\s+/g, ' ').trim();
+          return bodyText.substring(0, 500);
+        }
+      } catch (e) {
+        console.error("Error parsing HTML:", e);
+      }
+    }
+    
+    // For regular messages, strip tags and clean up
     decoded = decoded.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     decoded = decoded.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     decoded = decoded.replace(/<[^>]+>/g, ' ');
@@ -61,17 +94,23 @@ export default function Messages() {
     fetch(`/api/messages?user_id=${user_id}`)
       .then(res => res.json())
       .then(data => {
-        // Filter out duplicates by message_id
-        const uniqueMessages = [];
-        const seenIds = new Set();
-        
-        if (data.messages) {
+        if (data.messages && data.messages.length > 0) {
+          // Filter out duplicates
+          const uniqueMessages = [];
+          const seenIds = new Set();
+          
           data.messages.forEach(msg => {
             if (!seenIds.has(msg.message_id)) {
               seenIds.add(msg.message_id);
               uniqueMessages.push(msg);
             }
           });
+          
+          // Sort by creation date (newest first)
+          uniqueMessages.sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
+          
           setMessages(uniqueMessages);
         } else {
           setMessages([]);
@@ -112,7 +151,7 @@ export default function Messages() {
     setSelectedThread(message);
     
     // Strip HTML from the message body before displaying
-    const cleanContent = cleanHtmlContent(message.body) || message.subject || 'No message content';
+    const cleanContent = stripHtml(message.body) || message.subject || 'No message content';
     
     // Show the message body immediately
     setThreadMessages([{
@@ -124,7 +163,7 @@ export default function Messages() {
     }]);
   };
 
-  // Send reply
+  // Send reply - updated to use chrome.runtime.sendMessage
   const handleSendReply = async () => {
     if (!replyText.trim() || isSending || !selectedThread) return;
 
@@ -138,6 +177,7 @@ export default function Messages() {
       timestamp: new Date(),
       senderName: 'You'
     };
+    
     setThreadMessages([...threadMessages, newMessage]);
     const messageToSend = replyText;
     setReplyText('');
@@ -145,7 +185,7 @@ export default function Messages() {
     try {
       const user_id = localStorage.getItem('user_id');
       
-      // Try using the Chrome extension first
+      // Try extension message first
       if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({
           action: 'replyToEbayMessage',
@@ -153,53 +193,52 @@ export default function Messages() {
           text: messageToSend,
           userId: user_id
         }, (response) => {
+          console.log('Reply response:', response);
+          
           if (!response || !response.success) {
-            // Fall back to API if extension fails
-            sendReplyViaApi(user_id, selectedThread.message_id, messageToSend, newMessage.id);
+            console.error('Reply error:', response?.error);
+            fallbackApiCall();
           } else {
             setIsSending(false);
           }
         });
       } else {
-        // Fall back to API if extension not available
-        sendReplyViaApi(user_id, selectedThread.message_id, messageToSend, newMessage.id);
+        fallbackApiCall();
       }
+      
+      function fallbackApiCall() {
+        // Fallback to API call
+        fetch('/api/messages/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message_id: selectedThread.message_id, 
+            reply_text: messageToSend,
+            user_id: user_id
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            throw new Error(data.error || 'Failed to send reply');
+          }
+          setIsSending(false);
+        })
+        .catch(error => {
+          console.error('Fallback API error:', error);
+          setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
+          setReplyText(messageToSend);
+          alert('Failed to send message: ' + error.message);
+          setIsSending(false);
+        });
+      }
+      
     } catch (error) {
       // Remove the optimistic message on error
       setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
       setReplyText(messageToSend);
       console.error('Failed to send reply:', error);
       alert('Failed to send message: ' + error.message);
-      setIsSending(false);
-    }
-  };
-  
-  // Helper function to send reply via API
-  const sendReplyViaApi = async (userId, messageId, text, tempId) => {
-    try {
-      const response = await fetch('/api/messages/reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message_id: messageId, 
-          reply_text: text,
-          user_id: userId
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to send message');
-      }
-      
-      setIsSending(false);
-    } catch (error) {
-      // Remove the optimistic message on error
-      setThreadMessages(prev => prev.filter(m => m.id !== tempId));
-      setReplyText(text);
-      console.error('API reply error:', error);
-      alert('Failed to send message. Please try again later.');
       setIsSending(false);
     }
   };
@@ -217,6 +256,21 @@ export default function Messages() {
       minute: '2-digit',
       hour12: true
     }).format(new Date(date));
+  };
+
+  const syncMessages = () => {
+    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ action: 'syncData' }, response => {
+        if (response && response.success) {
+          alert('Sync initiated. Refreshing...');
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          alert('Error syncing: ' + (response?.error || 'Unknown error'));
+        }
+      });
+    } else {
+      alert('Chrome extension not available.');
+    }
   };
 
   // If a thread is selected, show the thread view
@@ -333,25 +387,15 @@ export default function Messages() {
                 className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
+            <select className="px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex-shrink-0">
+              <option>Auto-reply</option>
+              <option>Manual reply</option>
+            </select>
             <button
-              onClick={() => {
-                if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
-                  if (confirm('Reset all messages? This will delete everything and re-sync.')) {
-                    chrome.runtime.sendMessage({ action: 'nukeAllMessages' }, response => {
-                      if (response && response.success) {
-                        alert('Messages reset. Syncing...');
-                        chrome.runtime.sendMessage({ action: 'syncData' });
-                        setTimeout(() => window.location.reload(), 2000);
-                      } else {
-                        alert('Error: ' + (response?.error || 'Unknown error'));
-                      }
-                    });
-                  }
-                }
-              }}
-              className="px-4 py-2.5 border border-red-300 rounded-full text-sm font-medium text-red-700 hover:bg-red-50"
+              onClick={syncMessages}
+              className="px-4 py-2.5 border border-blue-300 rounded-full text-sm font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
             >
-              Reset Messages
+              Sync Messages
             </button>
           </div>
         </div>
@@ -445,6 +489,12 @@ export default function Messages() {
               ) : filteredMessages.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600 text-lg">No messages found.</p>
+                  <button 
+                    onClick={syncMessages}
+                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
+                    Sync Messages from eBay
+                  </button>
                 </div>
               ) : (
                 <div className="bg-white">
