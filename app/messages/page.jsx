@@ -192,7 +192,7 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
     }]);
   };
 
-  // Send reply
+  // Send reply - updated to use chrome.runtime.sendMessage instead of fetch API
   const handleSendReply = async () => {
     if (!replyText.trim() || isSending || !selectedThread) return;
 
@@ -206,6 +206,7 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
       timestamp: new Date(),
       senderName: 'You'
     };
+    
     setThreadMessages([...threadMessages, newMessage]);
     const messageToSend = replyText;
     setReplyText('');
@@ -214,34 +215,63 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
       const user_id = localStorage.getItem('user_id');
       console.log('Sending reply to:', selectedThread.message_id);
       
-      const response = await fetch(`/api/messages/${selectedThread.message_id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: messageToSend,
-          user_id: user_id
-        })
-      });
+      // Use chrome.runtime.sendMessage to communicate with the extension
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage(
+          {
+            action: 'replyToMessage',
+            messageId: selectedThread.message_id,
+            message: messageToSend,
+            userId: user_id
+          },
+          (response) => {
+            console.log('Reply response:', response);
+            
+            if (!response || !response.success) {
+              // Remove the optimistic message on error
+              setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
+              setReplyText(messageToSend);
+              console.error('Reply error:', response?.error);
+              alert('Failed to send message: ' + (response?.error || 'Unknown error'));
+            }
+            
+            setIsSending(false);
+          }
+        );
+      } else {
+        // Fallback to fetch API if chrome.runtime is not available
+        const response = await fetch(`/api/messages/reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message_id: selectedThread.message_id,
+            message: messageToSend,
+            user_id: user_id
+          })
+        });
 
-      // Check if response has content before trying to parse JSON
-      const contentType = response.headers.get('content-type');
-      let responseData = null;
-      
-      if (contentType && contentType.includes('application/json')) {
-        const text = await response.text();
-        if (text) {
-          responseData = JSON.parse(text);
+        // Check if response has content before trying to parse JSON
+        const contentType = response.headers.get('content-type');
+        let responseData = null;
+        
+        if (contentType && contentType.includes('application/json')) {
+          const text = await response.text();
+          if (text) {
+            responseData = JSON.parse(text);
+          }
         }
-      }
 
-      console.log('Reply response:', responseData);
+        console.log('Reply response:', responseData);
 
-      if (!response.ok) {
-        // Remove the optimistic message on error
-        setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
-        setReplyText(messageToSend);
-        console.error('Reply error:', responseData);
-        alert('Failed to send message: ' + (responseData?.error || 'Unknown error'));
+        if (!response.ok) {
+          // Remove the optimistic message on error
+          setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
+          setReplyText(messageToSend);
+          console.error('Reply error:', responseData);
+          alert('Failed to send message: ' + (responseData?.error || 'Unknown error'));
+        }
+        
+        setIsSending(false);
       }
     } catch (error) {
       // Remove the optimistic message on error
@@ -249,7 +279,6 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
       setReplyText(messageToSend);
       console.error('Failed to send reply:', error);
       alert('Failed to send message: ' + error.message);
-    } finally {
       setIsSending(false);
     }
   };
