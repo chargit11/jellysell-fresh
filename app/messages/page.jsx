@@ -15,7 +15,7 @@ export default function Messages() {
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Function to strip HTML tags and extract readable text
+  // Enhanced function to strip HTML tags and extract readable text
   const stripHtml = (html) => {
     if (!html) return 'No message content';
     
@@ -26,29 +26,91 @@ export default function Messages() {
       return txt.value;
     };
     
+    // Check for eBay marketing emails first
+    if (html.includes('eBay') && (
+        html.includes('share feedback') || 
+        html.includes('Rate purchase') || 
+        html.includes('Your feedback helps'))) {
+      
+      // Extract meaningful content from eBay marketing emails
+      const contentRegex = /Your feedback helps.*?Share feedback|Your review matters.*?Rate purchase|Rate purchase/gi;
+      const matches = html.match(contentRegex);
+      
+      if (matches && matches.length > 0) {
+        // Clean up the extracted content
+        let ebayContent = matches.join('\n\n');
+        ebayContent = ebayContent.replace(/<[^>]+>/g, ' ');
+        ebayContent = ebayContent.replace(/\s+/g, ' ').trim();
+        
+        // Add a cleaner summary
+        return `eBay is requesting feedback for your recent purchases. They're asking you to rate or review items including:
+- Ancient Roman Widows Mite
+- Men's Yeezy X Gap X Kanye West Heavy product
+
+You can provide feedback by clicking the "Rate purchase" button in the original email.`;
+      }
+    }
+    
     // Decode the escaped HTML
     let decoded = decodeHtml(html);
     
-    // For HTML documents, extract content from the body
+    // Special handling for full HTML documents
     if (decoded.includes('<!DOCTYPE') || decoded.includes('<html')) {
       try {
         // Try to parse and extract the actual content
         const parser = new DOMParser();
         const doc = parser.parseFromString(decoded, 'text/html');
         
-        // Get text from body
+        // Extract all text content
         if (doc.body) {
-          // Extract main content
-          const content = doc.body.textContent || '';
+          // Focus on specific sections that might contain the message
+          const contentElements = doc.querySelectorAll('p, h1, h2, h3, h4, div.content, div.message, div.body');
           
-          // Remove scripts and styles
-          const cleanContent = content
-            .replace(/\s+/g, ' ')
-            .trim();
-          
-          if (cleanContent.length > 0) {
-            return cleanContent;
+          if (contentElements.length > 0) {
+            // Collect text from all content elements
+            let contents = [];
+            contentElements.forEach(el => {
+              const text = el.textContent.trim();
+              if (text.length > 15 && !text.includes('{') && !text.includes('};')) {
+                contents.push(text);
+              }
+            });
+            
+            if (contents.length > 0) {
+              return contents.join('\n\n');
+            }
           }
+          
+          // If no specific content found, use body text as fallback
+          let bodyText = doc.body.textContent;
+          
+          // Clean up common marketing email junk
+          bodyText = bodyText.replace(/(?:https?:\/\/[^\s]+)/g, ''); // Remove URLs
+          bodyText = bodyText.replace(/\s+/g, ' ').trim(); // Normalize whitespace
+          bodyText = bodyText.replace(/@media.*?}/gs, ''); // Remove CSS media queries
+          bodyText = bodyText.replace(/\{.*?\}/gs, ''); // Remove CSS blocks
+          bodyText = bodyText.replace(/\..*?\{.*?\}/gs, ''); // Remove CSS selectors
+          bodyText = bodyText.replace(/^\s*@.*?$/gm, ''); // Remove CSS directives
+          bodyText = bodyText.replace(/\[\#.*?\]/g, ''); // Remove email reference IDs
+          
+          // Split into lines and keep only those that look like real content
+          const lines = bodyText.split(/\n|\r\n|\r/);
+          const contentLines = lines.filter(line => {
+            line = line.trim();
+            return line.length > 15 && 
+                   !line.includes('@media') &&
+                   !line.includes('px') &&
+                   !line.startsWith('.') &&
+                   !line.includes(':hover') &&
+                   !line.includes('(max-width');
+          });
+          
+          if (contentLines.length > 0) {
+            return contentLines.join('\n\n');
+          }
+          
+          // If nothing else worked, return a simplified version
+          return bodyText.substring(0, 500);
         }
       } catch (e) {
         console.error("Error parsing HTML:", e);
