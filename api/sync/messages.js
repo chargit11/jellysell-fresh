@@ -38,6 +38,8 @@ export default async function handler(req, res) {
           'new device is using',
           'get your payouts',
           'your review matters',
+          'requesting feedback',
+          'recent purchases',
           '.preheadermod',
           '@media',
           'prefers-color-scheme'
