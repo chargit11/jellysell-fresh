@@ -15,109 +15,27 @@ export default function Messages() {
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Enhanced function to strip HTML tags and extract readable text
-  const stripHtml = (html) => {
+  // Function to decode and clean HTML content
+  const cleanHtmlContent = (html) => {
     if (!html) return 'No message content';
     
-    // First, decode HTML entities
+    // Decode HTML entities
     const decodeHtml = (text) => {
       const txt = document.createElement('textarea');
       txt.innerHTML = text;
       return txt.value;
     };
     
-    // Check for eBay marketing emails first
-    if (html.includes('eBay') && (
-        html.includes('share feedback') || 
-        html.includes('Rate purchase') || 
-        html.includes('Your feedback helps'))) {
-      
-      // Extract meaningful content from eBay marketing emails
-      const contentRegex = /Your feedback helps.*?Share feedback|Your review matters.*?Rate purchase|Rate purchase/gi;
-      const matches = html.match(contentRegex);
-      
-      if (matches && matches.length > 0) {
-        // Clean up the extracted content
-        let ebayContent = matches.join('\n\n');
-        ebayContent = ebayContent.replace(/<[^>]+>/g, ' ');
-        ebayContent = ebayContent.replace(/\s+/g, ' ').trim();
-        
-        // Add a cleaner summary
-        return `eBay is requesting feedback for your recent purchases. They're asking you to rate or review items including:
-- Ancient Roman Widows Mite
-- Men's Yeezy X Gap X Kanye West Heavy product
-
-You can provide feedback by clicking the "Rate purchase" button in the original email.`;
-      }
-    }
-    
-    // Decode the escaped HTML
     let decoded = decodeHtml(html);
     
-    // Special handling for full HTML documents
-    if (decoded.includes('<!DOCTYPE') || decoded.includes('<html')) {
-      try {
-        // Try to parse and extract the actual content
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(decoded, 'text/html');
-        
-        // Extract all text content
-        if (doc.body) {
-          // Focus on specific sections that might contain the message
-          const contentElements = doc.querySelectorAll('p, h1, h2, h3, h4, div.content, div.message, div.body');
-          
-          if (contentElements.length > 0) {
-            // Collect text from all content elements
-            let contents = [];
-            contentElements.forEach(el => {
-              const text = el.textContent.trim();
-              if (text.length > 15 && !text.includes('{') && !text.includes('};')) {
-                contents.push(text);
-              }
-            });
-            
-            if (contents.length > 0) {
-              return contents.join('\n\n');
-            }
-          }
-          
-          // If no specific content found, use body text as fallback
-          let bodyText = doc.body.textContent;
-          
-          // Clean up common marketing email junk
-          bodyText = bodyText.replace(/(?:https?:\/\/[^\s]+)/g, ''); // Remove URLs
-          bodyText = bodyText.replace(/\s+/g, ' ').trim(); // Normalize whitespace
-          bodyText = bodyText.replace(/@media.*?}/gs, ''); // Remove CSS media queries
-          bodyText = bodyText.replace(/\{.*?\}/gs, ''); // Remove CSS blocks
-          bodyText = bodyText.replace(/\..*?\{.*?\}/gs, ''); // Remove CSS selectors
-          bodyText = bodyText.replace(/^\s*@.*?$/gm, ''); // Remove CSS directives
-          bodyText = bodyText.replace(/\[\#.*?\]/g, ''); // Remove email reference IDs
-          
-          // Split into lines and keep only those that look like real content
-          const lines = bodyText.split(/\n|\r\n|\r/);
-          const contentLines = lines.filter(line => {
-            line = line.trim();
-            return line.length > 15 && 
-                   !line.includes('@media') &&
-                   !line.includes('px') &&
-                   !line.startsWith('.') &&
-                   !line.includes(':hover') &&
-                   !line.includes('(max-width');
-          });
-          
-          if (contentLines.length > 0) {
-            return contentLines.join('\n\n');
-          }
-          
-          // If nothing else worked, return a simplified version
-          return bodyText.substring(0, 500);
-        }
-      } catch (e) {
-        console.error("Error parsing HTML:", e);
-      }
+    // For marketing emails from eBay, give a summary
+    if (decoded.includes('Your feedback helps') || 
+        decoded.includes('Rate purchase') || 
+        decoded.includes('Share feedback')) {
+      return "This is a marketing email from eBay about your listings. The full content can be viewed on eBay's website.";
     }
     
-    // For regular messages, strip tags and clean up
+    // Clean up HTML tags
     decoded = decoded.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     decoded = decoded.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     decoded = decoded.replace(/<[^>]+>/g, ' ');
@@ -143,7 +61,21 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
     fetch(`/api/messages?user_id=${user_id}`)
       .then(res => res.json())
       .then(data => {
-        setMessages(data.messages || []);
+        // Filter out duplicates by message_id
+        const uniqueMessages = [];
+        const seenIds = new Set();
+        
+        if (data.messages) {
+          data.messages.forEach(msg => {
+            if (!seenIds.has(msg.message_id)) {
+              seenIds.add(msg.message_id);
+              uniqueMessages.push(msg);
+            }
+          });
+          setMessages(uniqueMessages);
+        } else {
+          setMessages([]);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -180,7 +112,7 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
     setSelectedThread(message);
     
     // Strip HTML from the message body before displaying
-    const cleanContent = stripHtml(message.body) || message.subject || 'No message content';
+    const cleanContent = cleanHtmlContent(message.body) || message.subject || 'No message content';
     
     // Show the message body immediately
     setThreadMessages([{
@@ -192,7 +124,7 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
     }]);
   };
 
-  // Send reply - updated to use chrome.runtime.sendMessage instead of fetch API
+  // Send reply
   const handleSendReply = async () => {
     if (!replyText.trim() || isSending || !selectedThread) return;
 
@@ -206,72 +138,31 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
       timestamp: new Date(),
       senderName: 'You'
     };
-    
     setThreadMessages([...threadMessages, newMessage]);
     const messageToSend = replyText;
     setReplyText('');
     
     try {
       const user_id = localStorage.getItem('user_id');
-      console.log('Sending reply to:', selectedThread.message_id);
       
-      // Use chrome.runtime.sendMessage to communicate with the extension
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage(
-          {
-            action: 'replyToMessage',
-            messageId: selectedThread.message_id,
-            message: messageToSend,
-            userId: user_id
-          },
-          (response) => {
-            console.log('Reply response:', response);
-            
-            if (!response || !response.success) {
-              // Remove the optimistic message on error
-              setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
-              setReplyText(messageToSend);
-              console.error('Reply error:', response?.error);
-              alert('Failed to send message: ' + (response?.error || 'Unknown error'));
-            }
-            
+      // Try using the Chrome extension first
+      if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({
+          action: 'replyToEbayMessage',
+          messageId: selectedThread.message_id,
+          text: messageToSend,
+          userId: user_id
+        }, (response) => {
+          if (!response || !response.success) {
+            // Fall back to API if extension fails
+            sendReplyViaApi(user_id, selectedThread.message_id, messageToSend, newMessage.id);
+          } else {
             setIsSending(false);
           }
-        );
-      } else {
-        // Fallback to fetch API if chrome.runtime is not available
-        const response = await fetch(`/api/messages/reply`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message_id: selectedThread.message_id,
-            message: messageToSend,
-            user_id: user_id
-          })
         });
-
-        // Check if response has content before trying to parse JSON
-        const contentType = response.headers.get('content-type');
-        let responseData = null;
-        
-        if (contentType && contentType.includes('application/json')) {
-          const text = await response.text();
-          if (text) {
-            responseData = JSON.parse(text);
-          }
-        }
-
-        console.log('Reply response:', responseData);
-
-        if (!response.ok) {
-          // Remove the optimistic message on error
-          setThreadMessages(prev => prev.filter(m => m.id !== newMessage.id));
-          setReplyText(messageToSend);
-          console.error('Reply error:', responseData);
-          alert('Failed to send message: ' + (responseData?.error || 'Unknown error'));
-        }
-        
-        setIsSending(false);
+      } else {
+        // Fall back to API if extension not available
+        sendReplyViaApi(user_id, selectedThread.message_id, messageToSend, newMessage.id);
       }
     } catch (error) {
       // Remove the optimistic message on error
@@ -279,6 +170,36 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
       setReplyText(messageToSend);
       console.error('Failed to send reply:', error);
       alert('Failed to send message: ' + error.message);
+      setIsSending(false);
+    }
+  };
+  
+  // Helper function to send reply via API
+  const sendReplyViaApi = async (userId, messageId, text, tempId) => {
+    try {
+      const response = await fetch('/api/messages/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message_id: messageId, 
+          reply_text: text,
+          user_id: userId
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to send message');
+      }
+      
+      setIsSending(false);
+    } catch (error) {
+      // Remove the optimistic message on error
+      setThreadMessages(prev => prev.filter(m => m.id !== tempId));
+      setReplyText(text);
+      console.error('API reply error:', error);
+      alert('Failed to send message. Please try again later.');
       setIsSending(false);
     }
   };
@@ -412,10 +333,26 @@ You can provide feedback by clicking the "Rate purchase" button in the original 
                 className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            <select className="px-4 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex-shrink-0">
-              <option>Auto-reply</option>
-              <option>Manual reply</option>
-            </select>
+            <button
+              onClick={() => {
+                if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+                  if (confirm('Reset all messages? This will delete everything and re-sync.')) {
+                    chrome.runtime.sendMessage({ action: 'nukeAllMessages' }, response => {
+                      if (response && response.success) {
+                        alert('Messages reset. Syncing...');
+                        chrome.runtime.sendMessage({ action: 'syncData' });
+                        setTimeout(() => window.location.reload(), 2000);
+                      } else {
+                        alert('Error: ' + (response?.error || 'Unknown error'));
+                      }
+                    });
+                  }
+                }
+              }}
+              className="px-4 py-2.5 border border-red-300 rounded-full text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Reset Messages
+            </button>
           </div>
         </div>
 
