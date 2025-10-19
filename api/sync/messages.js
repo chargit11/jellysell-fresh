@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   try {
     const { messages, user_id } = req.body;
-
+    
     console.log('Received messages sync request:', { user_id, messageCount: messages?.length });
 
     if (!user_id) {
@@ -20,7 +20,41 @@ export default async function handler(req, res) {
     }
 
     if (messages && messages.length > 0) {
-      const messagesData = messages.map(msg => ({
+      // Filter out eBay system messages
+      const filteredMessages = messages.filter(msg => {
+        const sender = msg.sender || '';
+        const body = (msg.body || '').toLowerCase();
+        const subject = (msg.subject || '').toLowerCase();
+        
+        // Skip if no real sender or is eBay system
+        if (sender === 'eBay User' || sender === 'eBay' || sender === 'Unknown' || !sender) return false;
+        
+        // Skip promotional/system messages
+        const systemPhrases = [
+          'share feedback',
+          'rate purchase',
+          'enhance the ebay experience',
+          'identified ways to improve',
+          'new device is using',
+          'get your payouts',
+          'your review matters',
+          '.preheadermod',
+          '@media',
+          'prefers-color-scheme'
+        ];
+        
+        return !systemPhrases.some(phrase => body.includes(phrase) || subject.includes(phrase));
+      });
+
+      if (filteredMessages.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: 'No valid messages to sync (all were system messages)',
+          count: 0
+        });
+      }
+
+      const messagesData = filteredMessages.map(msg => ({
         user_id: user_id,
         message_id: msg.messageId || `msg_${Date.now()}_${Math.random()}`,
         sender: msg.sender || 'Unknown',
@@ -50,6 +84,7 @@ export default async function handler(req, res) {
       message: 'Messages synced successfully',
       count: messages?.length || 0
     });
+
   } catch (error) {
     console.error('Error syncing messages:', error);
     return res.status(500).json({ 
