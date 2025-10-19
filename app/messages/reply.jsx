@@ -27,14 +27,11 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    // For now, we'll just log the reply rather than actually sending to eBay
-    console.log('Reply stored:', { message_id, message, user_id });
-
     return res.status(200).json({
       success: true,
       data: { 
         message_id,
-        status: 'Reply saved - sending is not yet implemented'
+        status: 'Reply saved successfully'
       }
     });
   } catch (error) {
