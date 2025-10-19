@@ -29,9 +29,30 @@ export default function Messages() {
     // Decode the escaped HTML
     let decoded = decodeHtml(html);
     
-    // If it's a full HTML document (marketing email from eBay)
+    // For HTML documents, extract content from the body
     if (decoded.includes('<!DOCTYPE') || decoded.includes('<html')) {
-      return "This is a marketing email from eBay about your listings. The full content can be viewed on eBay's website.";
+      try {
+        // Try to parse and extract the actual content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(decoded, 'text/html');
+        
+        // Get text from body
+        if (doc.body) {
+          // Extract main content
+          const content = doc.body.textContent || '';
+          
+          // Remove scripts and styles
+          const cleanContent = content
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          if (cleanContent.length > 0) {
+            return cleanContent;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing HTML:", e);
+      }
     }
     
     // For regular messages, strip tags and clean up
