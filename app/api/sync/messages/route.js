@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
 
 const supabase = createClient(
   'https://qvhjmzdavsbauugubfcm.supabase.co',
@@ -9,11 +8,13 @@ const supabase = createClient(
 export async function POST(request) {
   try {
     const { messages, user_id } = await request.json();
-
     console.log('Received messages sync request:', { user_id, messageCount: messages?.length });
 
     if (!user_id) {
-      return NextResponse.json({ error: 'user_id required' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'user_id required' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     if (messages && messages.length > 0) {
@@ -42,16 +43,23 @@ export async function POST(request) {
       console.log('Messages saved successfully');
     }
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       message: 'Messages synced successfully',
       count: messages?.length || 0
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
+
   } catch (error) {
     console.error('Error syncing messages:', error);
-    return NextResponse.json(
-      { error: 'Failed to sync messages', message: error.message },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ 
+      error: 'Failed to sync messages', 
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
