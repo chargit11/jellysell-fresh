@@ -5,9 +5,19 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function OPTIONS() {
+  return new Response(null, { headers: corsHeaders });
+}
+
 export async function GET() {
   return new Response(JSON.stringify({ test: 'Route is working' }), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
@@ -19,7 +29,7 @@ export async function POST(request) {
     if (!user_id) {
       return new Response(JSON.stringify({ error: 'user_id required' }), { 
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -55,7 +65,7 @@ export async function POST(request) {
       count: messages?.length || 0
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
@@ -65,7 +75,7 @@ export async function POST(request) {
       message: error.message 
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }
