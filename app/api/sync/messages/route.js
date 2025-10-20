@@ -5,6 +5,12 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
+export async function GET() {
+  return new Response(JSON.stringify({ test: 'Route is working' }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
 export async function POST(request) {
   try {
     const { messages, user_id } = await request.json();
