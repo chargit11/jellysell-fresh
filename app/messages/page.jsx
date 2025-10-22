@@ -94,7 +94,6 @@ export default function MessagesPage() {
 
   const syncMessages = async () => {
     console.log('Syncing messages from eBay...');
-    // Trigger extension sync
     await fetchMessages();
   };
 
