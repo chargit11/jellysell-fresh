@@ -1,338 +1,551 @@
 'use client';
+import { useEffect, useState } from 'react';
+import Sidebar from '@/components/Sidebar';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-
-const supabase = createClient(
-  'https://qvhjmzdavsbauugubfcm.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
-);
-
-export default function MessagesPage() {
-  const [messages, setMessages] = useState([]);
-  const [filteredMessages, setFilteredMessages] = useState([]);
+export default function Listings() {
+  const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [selectedMessages, setSelectedMessages] = useState([]);
-  const [currentFilter, setCurrentFilter] = useState('inbox');
+  const [editingPrice, setEditingPrice] = useState(null);
+  const [editingStock, setEditingStock] = useState(null);
+  const [newPrice, setNewPrice] = useState('');
+  const [newStock, setNewStock] = useState('');
+  const [selectedListings, setSelectedListings] = useState([]);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMessage, setSelectedMessage] = useState(null);
 
   useEffect(() => {
-    fetchUser();
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      // Allow access to the page even if not signed in
+      setLoading(false);
+      return;
+    }
+    fetch(`/api/listings?user_id=${user_id}`)
+      .then(res => res.json())
+      .then(data => { 
+        setListings(data.listings || []); 
+        setLoading(false); 
+      })
+      .catch(err => { 
+        console.error('Error:', err); 
+        setLoading(false); 
+      });
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchMessages();
-    }
-  }, [user]);
+  const handlePriceDoubleClick = (listing) => { 
+    setEditingPrice(listing.listing_id); 
+    setNewPrice(listing.price.toString()); 
+  };
 
-  useEffect(() => {
-    filterMessages();
-  }, [messages, currentFilter, searchQuery]);
+  const handleStockDoubleClick = (listing) => { 
+    setEditingStock(listing.listing_id); 
+    setNewStock((listing.quantity || 1).toString()); 
+  };
 
-  const fetchUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    if (!user) {
-      setLoading(false);
+  const handlePriceSave = async (listing) => {
+    const user_id = localStorage.getItem('user_id');
+    
+    try {
+      const response = await fetch('/api/ebay/update-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: listing.listing_id,
+          price: parseFloat(newPrice),
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to update price: ' + data.error);
+        return;
+      }
+
+      setListings(listings.map(l => 
+        l.listing_id === listing.listing_id 
+          ? { ...l, price: parseFloat(newPrice) }
+          : l
+      ));
+
+      setEditingPrice(null);
+      setNewPrice('');
+      alert('Price updated successfully on eBay!');
+    } catch (error) {
+      alert('Error: ' + error.message);
     }
   };
 
-  const fetchMessages = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('ebay_messages')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+  const handleStockSave = async (listing) => {
+    const user_id = localStorage.getItem('user_id');
+    
+    try {
+      const response = await fetch('/api/ebay/update-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: listing.listing_id,
+          quantity: parseInt(newStock),
+          user_id
+        })
+      });
 
-    if (error) {
-      console.error('Error fetching messages:', error);
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to update quantity: ' + data.error);
+        return;
+      }
+
+      setListings(listings.map(l => 
+        l.listing_id === listing.listing_id 
+          ? { ...l, quantity: parseInt(newStock) }
+          : l
+      ));
+
+      setEditingStock(null);
+      setNewStock('');
+      alert('Quantity updated successfully on eBay!');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleDeleteListing = async (listingId) => {
+    if (!confirm('Are you sure you want to delete this listing?')) {
+      return;
+    }
+
+    const user_id = localStorage.getItem('user_id');
+
+    try {
+      const response = await fetch('/api/listings/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: listingId,
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to delete listing: ' + data.error);
+        return;
+      }
+
+      setListings(listings.filter(l => l.listing_id !== listingId));
+      setOpenMenuId(null);
+      alert('Listing deleted successfully!');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedListings.length === 0) {
+      alert('Please select listings to delete');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedListings.length} listing(s)?`)) {
+      return;
+    }
+
+    const user_id = localStorage.getItem('user_id');
+
+    try {
+      const response = await fetch('/api/listings/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_ids: selectedListings,
+          user_id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to delete listings: ' + data.error);
+        return;
+      }
+
+      setListings(listings.filter(l => !selectedListings.includes(l.listing_id)));
+      setSelectedListings([]);
+      alert(`${selectedListings.length} listing(s) deleted successfully!`);
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const calculateQuality = (listing) => { 
+    let score = 0; 
+    if (listing.title && listing.title.length > 10) score += 33; 
+    if (listing.image) score += 33; 
+    if (listing.title && listing.title.length > 30) score += 34; 
+    if (score >= 80) return { label: 'Good', color: 'green' }; 
+    if (score >= 50) return { label: 'Fair', color: 'yellow' }; 
+    return { label: 'Poor', color: 'red' }; 
+  };
+
+  const toggleSelectListing = (listingId) => {
+    setSelectedListings(prev => 
+      prev.includes(listingId) 
+        ? prev.filter(id => id !== listingId)
+        : [...prev, listingId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedListings.length === filteredListings.length) {
+      setSelectedListings([]);
     } else {
-      setMessages(data || []);
+      setSelectedListings(filteredListings.map(l => l.listing_id));
     }
-    setLoading(false);
   };
 
-  const filterMessages = () => {
-    let filtered = [...messages];
-
-    if (searchQuery) {
-      filtered = filtered.filter(msg => 
-        msg.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        msg.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        msg.body?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    switch (currentFilter) {
-      case 'inbox':
-        break;
-      case 'sent':
-        filtered = [];
-        break;
-      case 'unread':
-        filtered = filtered.filter(msg => !msg.read);
-        break;
-      case 'spam':
-        filtered = [];
-        break;
-      case 'trash':
-        filtered = [];
-        break;
-      default:
-        break;
-    }
-
-    setFilteredMessages(filtered);
+  const toggleMenu = (listingId) => {
+    setOpenMenuId(openMenuId === listingId ? null : listingId);
   };
 
-  const syncMessages = async () => {
-    console.log('Syncing messages from eBay...');
-    await fetchMessages();
-  };
+  const filteredListings = listings.filter(listing => {
+    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
-  const toggleSelectMessage = (messageId) => {
-    setSelectedMessages(prev => 
-      prev.includes(messageId) 
-        ? prev.filter(id => id !== messageId)
-        : [...prev, messageId]
-    );
-  };
-
-  const handleMessageClick = (message) => {
-    setSelectedMessage(message);
-  };
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">Please log in to view messages</h2>
-          <Link href="/sign-in" className="text-blue-600 hover:underline">
-            Go to login
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const tabs = [
+    { id: 'all', label: 'All', count: listings.length },
+    { id: 'live', label: 'Live', count: listings.length },
+    { id: 'reviewing', label: 'Reviewing', count: 0 },
+    { id: 'violation', label: 'Violation', count: 0},
+    { id: 'deactivated', label: 'Deactivated', count: 0 },
+    { id: 'draft', label: 'Draft', count: 0 },
+    { id: 'deleted', label: 'Deleted', count: 0 },
+  ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search your messages"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option>Auto-reply</option>
-              </select>
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1">
+        <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">Listings</h1>
+          <div className="flex gap-3">
+            {selectedListings.length > 0 && (
               <button 
-                onClick={syncMessages}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
               >
-                Sync Messages
+                Delete ({selectedListings.length})
               </button>
-            </div>
+            )}
+            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
+              Add a product
+            </button>
+            <button className="px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">
+              Import Listing
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="w-48 bg-white border-r border-gray-200 py-4">
-            <nav className="space-y-1 px-4">
-              <button 
-                onClick={() => setCurrentFilter('inbox')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'inbox' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+      
+        <div className="px-8 pt-6 border-b border-gray-200">
+          <div className="flex gap-6">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
               >
-                Inbox
+                {tab.label} {tab.count > 0 && <span className="text-gray-400">{tab.count}</span>}
               </button>
-              <button 
-                onClick={() => setCurrentFilter('sent')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'sent' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Sent
-              </button>
-              <button 
-                onClick={() => setCurrentFilter('all')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                All
-              </button>
-              <button 
-                onClick={() => setCurrentFilter('unread')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'unread' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Unread
-              </button>
-              <button 
-                onClick={() => setCurrentFilter('spam')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'spam' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Spam
-              </button>
-              <button 
-                onClick={() => setCurrentFilter('trash')}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold ${currentFilter === 'trash' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Trash
-              </button>
-            </nav>
+            ))}
           </div>
+        </div>
 
-          <div className="flex-1 flex flex-col">
-            <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Trash
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Mark Unread
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-                </svg>
-                Mark Read
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                </svg>
-                Report
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                </svg>
-                Archive
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                Label
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+        <div className="px-8 pt-6 pb-4 flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search products"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+            Category
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+            Sort
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-8 pb-8">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
+              <p className="mt-4 text-gray-600">Loading listings...</p>
             </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
-                  <p className="mt-4 text-gray-600">Loading messages...</p>
-                </div>
-              ) : filteredMessages.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">No messages found.</p>
-                  <button 
-                    onClick={syncMessages}
-                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                  >
-                    Sync Messages from eBay
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-white">
-                  {(() => {
-                    const conversationsMap = {};
-                    
-                    filteredMessages.forEach(msg => {
-                      const key = `${msg.sender}_${msg.item_id || 'no_item'}`;
-                      
-                      if (!conversationsMap[key]) {
-                        conversationsMap[key] = {
-                          ...msg,
-                          message_count: 1,
-                          all_messages: [msg]
-                        };
-                      } else {
-                        conversationsMap[key].message_count += 1;
-                        conversationsMap[key].all_messages.push(msg);
-                        
-                        if (new Date(msg.created_at) > new Date(conversationsMap[key].created_at)) {
-                          conversationsMap[key] = {
-                            ...msg,
-                            message_count: conversationsMap[key].message_count,
-                            all_messages: conversationsMap[key].all_messages
-                          };
-                        }
-                      }
-                    });
-                    
-                    const conversations = Object.values(conversationsMap);
-                    
-                    return conversations.map((conversation, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => handleMessageClick(conversation)}
-                        className="flex items-center gap-4 px-8 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedMessages.includes(conversation.message_id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleSelectMessage(conversation.message_id);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        
-                        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-                          <img 
-                            src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
-                            alt="eBay" 
-                            className="w-6 h-auto"
+          ) : filteredListings.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">
+                {searchQuery ? 'No listings found matching your search.' : 'No listings found. Sync your eBay account using the Chrome extension.'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left w-12">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedListings.length === filteredListings.length && filteredListings.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredListings.map((listing, idx) => { 
+                    const quality = calculateQuality(listing); 
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input 
+                            type="checkbox"
+                            checked={selectedListings.includes(listing.listing_id)}
+                            onChange={() => toggleSelectListing(listing.listing_id)}
+                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                           />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-gray-900 text-sm">{conversation.sender || 'eBay User'}</p>
-                              {conversation.message_count > 1 && (
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
-                                  {conversation.message_count}
-                                </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            {listing.image ? (
+                              <img 
+                                src={listing.image} 
+                                alt={listing.title} 
+                                className="w-12 h-12 object-cover rounded border border-gray-200" 
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">No image</span>
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">{listing.title}</p>
+                              <p className="text-xs text-gray-500">ID: {listing.listing_id}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-600">
+                            <p className="font-semibold">0 sold</p>
+                            <p className="text-gray-400">0 views</p>
+                            <p className="text-gray-400">$0</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-sm font-semibold text-gray-700">Live</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          {editingStock === listing.listing_id ? (
+                            <input 
+                              type="number" 
+                              value={newStock} 
+                              onChange={(e) => setNewStock(e.target.value)} 
+                              onBlur={() => handleStockSave(listing)} 
+                              onKeyDown={(e) => { 
+                                if (e.key === 'Enter') handleStockSave(listing); 
+                                if (e.key === 'Escape') { 
+                                  setEditingStock(null); 
+                                  setNewStock(''); 
+                                }
+                              }} 
+                              autoFocus 
+                              className="w-16 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                            />
+                          ) : (
+                            <span 
+                              className="text-sm text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
+                              onDoubleClick={() => handleStockDoubleClick(listing)} 
+                              title="Double-click to edit"
+                            >
+                              {listing.quantity || 0}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {editingPrice === listing.listing_id ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-500 text-sm">$</span>
+                              <input 
+                                type="number" 
+                                value={newPrice} 
+                                onChange={(e) => setNewPrice(e.target.value)} 
+                                onBlur={() => handlePriceSave(listing)} 
+                                onKeyDown={(e) => { 
+                                  if (e.key === 'Enter') handlePriceSave(listing); 
+                                  if (e.key === 'Escape') { 
+                                    setEditingPrice(null); 
+                                    setNewPrice(''); 
+                                  }
+                                }} 
+                                autoFocus 
+                                className="w-20 px-2 py-1 border border-purple-500 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                              />
+                            </div>
+                          ) : (
+                            <span 
+                              className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors" 
+                              onDoubleClick={() => handlePriceDoubleClick(listing)} 
+                              title="Double-click to edit"
+                            >
+                              ${listing.price?.toFixed(2)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex gap-1">
+                            <div className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded border border-gray-200">
+                              <img 
+                                src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
+                                alt="eBay" 
+                                className="w-4 h-auto"
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-sm font-semibold text-gray-700">{quality.label}</span>
+                            <div className="flex gap-1">
+                              <div className={`w-4 h-2 rounded-full ${
+                                quality.color === 'green' 
+                                  ? 'bg-green-500' 
+                                  : quality.color === 'yellow' 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-gray-300'
+                              }`}></div>
+                              <div className={`w-4 h-2 rounded-full ${
+                                quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
+                              }`}></div>
+                              <div className={`w-4 h-2 rounded-full ${
+                                quality.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
+                              }`}></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <button className="p-1.5 hover:bg-gray-100 rounded">
+                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <div className="relative">
+                              <button 
+                                onClick={() => toggleMenu(listing.listing_id)}
+                                className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-0.5"
+                              >
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                              </button>
+                              
+                              {openMenuId === listing.listing_id && (
+                                <>
+                                  <div 
+                                    className="fixed inset-0 z-10" 
+                                    onClick={() => setOpenMenuId(null)}
+                                  ></div>
+                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      View Details
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Edit Listing
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Duplicate
+                                    </button>
+                                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+                                      Deactivate
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteListing(listing.listing_id)}
+                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500">{new Date(conversation.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           </div>
-                          <p className="text-sm text-gray-600 truncate">{conversation.subject || 'No subject'}</p>
-                        </div>
-                      </div>
-                    ));
-                  })()}
+                        </td>
+                      </tr>
+                    ); 
+                  })}
+                </tbody>
+              </table>
+
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Total: {filteredListings.length}
                 </div>
-              )}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <span className="text-sm text-gray-700">1</span>
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <select className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>50/Page</option>
+                    <option>100/Page</option>
+                    <option>200/Page</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
