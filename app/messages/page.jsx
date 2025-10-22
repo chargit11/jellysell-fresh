@@ -13,27 +13,31 @@ export default function MessagesPage() {
     const fetchMessages = async () => {
       const supabase = createClient(
         'https://qvhjmzdavsbauugubfcm.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw',
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-          }
-        }
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
       );
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Try getting session first
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session:', session);
+      
+      if (!session?.user) {
+        console.log('No session found');
         setLoading(false);
         return;
       }
-      setUser(user);
+      
+      const currentUser = session.user;
+      setUser(currentUser);
+      console.log('User ID:', currentUser.id);
 
       const { data: messages, error } = await supabase
         .from('ebay_messages')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
+
+      console.log('Messages:', messages);
+      console.log('Error:', error);
 
       if (error) {
         console.error('Error fetching messages:', error);
