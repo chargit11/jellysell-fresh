@@ -1,101 +1,12 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 
-export default function MessagesPage() {
-  const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+export default async function MessagesPage() {
+  const supabase = createClient();
+  
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const supabase = createClient(
-        'https://qvhjmzdavsbauugubfcm.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
-      );
-
-      // Try getting session first
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session:', session);
-      
-      if (!session?.user) {
-        console.log('No session found');
-        setLoading(false);
-        return;
-      }
-      
-      const currentUser = session.user;
-      setUser(currentUser);
-      console.log('User ID:', currentUser.id);
-
-      const { data: messages, error } = await supabase
-        .from('ebay_messages')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-      console.log('Messages:', messages);
-      console.log('Error:', error);
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        setLoading(false);
-        return;
-      }
-
-      // Group messages by conversation (sender + item_id)
-      const conversationsMap = {};
-      
-      messages.forEach(msg => {
-        const key = `${msg.sender}_${msg.item_id || 'no_item'}`;
-        
-        if (!conversationsMap[key]) {
-          conversationsMap[key] = {
-            sender: msg.sender,
-            item_id: msg.item_id,
-            subject: msg.subject,
-            latest_message: msg.body,
-            created_at: msg.created_at,
-            read: msg.read,
-            message_count: 1,
-            messages: [msg]
-          };
-        } else {
-          conversationsMap[key].message_count += 1;
-          conversationsMap[key].messages.push(msg);
-          
-          // Update to latest message if newer
-          if (new Date(msg.created_at) > new Date(conversationsMap[key].created_at)) {
-            conversationsMap[key].latest_message = msg.body;
-            conversationsMap[key].created_at = msg.created_at;
-            conversationsMap[key].subject = msg.subject;
-          }
-        }
-      });
-
-      // Convert to array and sort by most recent
-      const conversationsList = Object.values(conversationsMap).sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      );
-
-      setConversations(conversationsList);
-      setLoading(false);
-    };
-
-    fetchMessages();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading messages...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
+  if (userError || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -107,6 +18,51 @@ export default function MessagesPage() {
       </div>
     );
   }
+
+  const { data: messages, error: messagesError } = await supabase
+    .from('ebay_messages')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (messagesError) {
+    console.error('Error fetching messages:', messagesError);
+  }
+
+  // Group messages by conversation (sender + item_id)
+  const conversationsMap = {};
+  
+  (messages || []).forEach(msg => {
+    const key = `${msg.sender}_${msg.item_id || 'no_item'}`;
+    
+    if (!conversationsMap[key]) {
+      conversationsMap[key] = {
+        sender: msg.sender,
+        item_id: msg.item_id,
+        subject: msg.subject,
+        latest_message: msg.body,
+        created_at: msg.created_at,
+        read: msg.read,
+        message_count: 1,
+        messages: [msg]
+      };
+    } else {
+      conversationsMap[key].message_count += 1;
+      conversationsMap[key].messages.push(msg);
+      
+      // Update to latest message if newer
+      if (new Date(msg.created_at) > new Date(conversationsMap[key].created_at)) {
+        conversationsMap[key].latest_message = msg.body;
+        conversationsMap[key].created_at = msg.created_at;
+        conversationsMap[key].subject = msg.subject;
+      }
+    }
+  });
+
+  // Convert to array and sort by most recent
+  const conversations = Object.values(conversationsMap).sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
   return (
     <div className="max-w-6xl mx-auto p-6">
