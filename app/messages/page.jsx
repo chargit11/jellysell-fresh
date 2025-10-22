@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@/utils/supabase/server";
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 
 export default async function MessagesPage() {
-  // Get auth token from cookies
-  const cookieStore = cookies();
-  const authCookie = cookieStore.get('sb-qvhjmzdavsbauugubfcm-auth-token');
+  const supabase = await createClient();
   
-  const supabase = createClient(
-    'https://qvhjmzdavsbauugubfcm.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
-  );
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -27,15 +19,11 @@ export default async function MessagesPage() {
     );
   }
 
-  const { data: messages, error: messagesError } = await supabase
+  const { data: messages } = await supabase
     .from('ebay_messages')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
-
-  if (messagesError) {
-    console.error('Error fetching messages:', messagesError);
-  }
 
   // Group messages by conversation (sender + item_id)
   const conversationsMap = {};
