@@ -60,7 +60,6 @@ export default function MessagesPage() {
   const filterMessages = () => {
     let filtered = [...messages];
 
-    // Apply search
     if (searchQuery) {
       filtered = filtered.filter(msg => 
         msg.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +68,6 @@ export default function MessagesPage() {
       );
     }
 
-    // Apply folder filter
     switch (currentFilter) {
       case 'inbox':
         break;
@@ -125,7 +123,6 @@ export default function MessagesPage() {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
@@ -155,9 +152,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Main content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
           <div className="w-48 bg-white border-r border-gray-200 py-4">
             <nav className="space-y-1 px-4">
               <button 
@@ -199,9 +194,7 @@ export default function MessagesPage() {
             </nav>
           </div>
 
-          {/* Messages list */}
           <div className="flex-1 flex flex-col">
-            {/* Action buttons */}
             <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3">
               <input
                 type="checkbox"
@@ -248,7 +241,6 @@ export default function MessagesPage() {
               </button>
             </div>
 
-            {/* Messages list */}
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="text-center py-12">
@@ -268,7 +260,6 @@ export default function MessagesPage() {
               ) : (
                 <div className="bg-white">
                   {(() => {
-                    // Group messages by conversation (sender + item_id)
                     const conversationsMap = {};
                     
                     filteredMessages.forEach(msg => {
@@ -284,7 +275,6 @@ export default function MessagesPage() {
                         conversationsMap[key].message_count += 1;
                         conversationsMap[key].all_messages.push(msg);
                         
-                        // Use the most recent message for display
                         if (new Date(msg.created_at) > new Date(conversationsMap[key].created_at)) {
                           conversationsMap[key] = {
                             ...msg,
