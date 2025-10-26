@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 
@@ -51,8 +50,12 @@ export default function Messages() {
               {conversations.map((conversation, idx) => (
                 <div key={idx} className="bg-white p-4 rounded-lg border border-gray-200 hover:border-purple-200 cursor-pointer transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-purple-600 font-semibold">{conversation.sender?.[0]?.toUpperCase() || 'E'}</span>
+                    <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" 
+                        alt="eBay" 
+                        className="w-6 h-auto"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
