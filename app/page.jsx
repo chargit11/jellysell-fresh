@@ -241,8 +241,8 @@ export default function Home() {
       </header>
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">Manage Your Multi-Platform Store In One Place</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere, Manage in One Place</h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">JellySell® is the FASTEST way to sell something online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 text-lg">Start Free Trial</button>
             <a href="#features" className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-lg inline-flex items-center justify-center">Learn More</a>
