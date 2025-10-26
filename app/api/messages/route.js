@@ -8,9 +8,17 @@ const supabase = createClient(
 
 export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const user_id = searchParams.get('user_id');
+
+    if (!user_id) {
+      return NextResponse.json({ error: 'user_id required' }, { status: 400 });
+    }
+
     const { data: messages, error } = await supabase
       .from('ebay_messages')
       .select('*')
+      .eq('user_id', user_id)
       .order('created_at', { ascending: false });
 
     if (error) {
