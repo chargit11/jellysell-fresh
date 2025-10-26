@@ -13,7 +13,14 @@ export default function Messages() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch('/api/messages');
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        console.error('No user_id found');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`/api/messages?user_id=${userId}`);
       if (response.ok) {
         const data = await response.json();
         setConversations(data.messages || []);
