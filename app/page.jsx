@@ -242,6 +242,51 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">What Sellers Are Saying</h2>
+          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Join thousands of successful sellers who trust JellySell</p>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-600 font-bold">SC</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Sarah Chen</p>
+                  <p className="text-sm text-gray-500">@sarahsells</p>
+                </div>
+              </div>
+              <p className="text-gray-700">JellySell has completely transformed how I manage my inventory across eBay and Etsy. Sales are up 40% this quarter! 🚀</p>
+            </div>
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-600 font-bold">MJ</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Mike Johnson</p>
+                  <p className="text-sm text-gray-500">@vintagevibes</p>
+                </div>
+              </div>
+              <p className="text-gray-700">The automated messaging feature alone saves me 10+ hours a week. Worth every penny!</p>
+            </div>
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-600 font-bold">LR</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Lisa Rodriguez</p>
+                  <p className="text-sm text-gray-500">@thriftqueen</p>
+                </div>
+              </div>
+              <p className="text-gray-700">Finally ditched my spreadsheets! JellySell keeps everything organized and synced perfectly across all my stores.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
