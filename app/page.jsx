@@ -21,6 +21,35 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    // Handle OAuth callback
+    const handleOAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      
+      if (accessToken) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser(accessToken);
+          
+          if (user) {
+            // Store user info
+            localStorage.setItem('user_id', user.id);
+            localStorage.setItem('user_email', user.email);
+            
+            // Clear the hash from URL
+            window.history.replaceState(null, '', window.location.pathname);
+            
+            // Redirect to dashboard
+            router.push('/dashboard');
+          }
+        } catch (error) {
+          console.error('Error handling OAuth callback:', error);
+          setError('Failed to complete sign in');
+        }
+      }
+    };
+
+    handleOAuthCallback();
+
     const script = document.createElement('script');
     script.src = 'https://platform.twitter.com/widgets.js';
     script.async = true;
@@ -37,7 +66,7 @@ export default function Home() {
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [router]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -71,7 +100,7 @@ export default function Home() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: window.location.origin
         }
       });
       
