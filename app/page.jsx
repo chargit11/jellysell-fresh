@@ -193,7 +193,7 @@ export default function Home() {
                 </div>
               </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Create Account</button>
+              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign Up</button>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
@@ -241,13 +241,42 @@ export default function Home() {
       </header>
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere, Manage in One Place</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">JellySell® is the FASTEST way to sell something online.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 text-lg">Start Free Trial</button>
-            <a href="#features" className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-lg inline-flex items-center justify-center">Learn More</a>
+          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
+          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell® is the FASTEST way to sell something online.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</button>
+            <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
           </div>
-          <p className="text-sm text-gray-500 mt-6">14 days free • No credit card required • Cancel anytime</p>
+          <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
+        </div>
+      </section>
+      <section className="py-12 bg-gray-50 border-y border-gray-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wide mb-8">Connect with your favorite platforms</p>
+          <div className="flex flex-wrap justify-center items-center gap-12">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741" alt="Poshmark" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145" alt="Mercari" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/640px-Depop_logo.svg.png" alt="Depop" className="h-8" />
+          </div>
+        </div>
+      </section>
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">See JellySell® in Action</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Experience the power of unified multi-platform management</p>
+          </div>
+          <div className="space-y-16">
+            <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-8 border border-purple-100">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Unified Dashboard</h3>
+              <p className="text-gray-600 mb-6">Monitor all your sales, inventory, and performance metrics in one place</p>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
+                <img src="https://i.ibb.co/cWfZQPL/Copy-of-Final-Exam-Card3.png" alt="Dashboard" className="w-full" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       <section id="features" className="py-24 px-6 bg-white">
