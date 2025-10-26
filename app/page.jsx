@@ -113,7 +113,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-40 px-6 bg-white">
+      <section className="min-h-screen flex items-center px-6 bg-white">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             Sell Everywhere, Manage in One Place
