@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 
 const supabase = createClient(
   'https://qvhjmzdavsbauugubfcm.supabase.co',
@@ -36,13 +37,10 @@ export default function MessagesPage() {
   const fetchUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    if (!user) {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   const fetchMessages = async () => {
-    setLoading(true);
     const { data, error } = await supabase
       .from('ebay_messages')
       .select('*')
@@ -54,7 +52,6 @@ export default function MessagesPage() {
     } else {
       setMessages(data || []);
     }
-    setLoading(false);
   };
 
   const filterMessages = () => {
@@ -107,21 +104,36 @@ export default function MessagesPage() {
     setSelectedMessage(message);
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent"></div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">Please log in to view messages</h2>
-          <Link href="/sign-in" className="text-blue-600 hover:underline">
-            Go to login
-          </Link>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-4">Please log in to view messages</h2>
+            <Link href="/sign-in" className="text-blue-600 hover:underline">
+              Go to login
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
       <div className="flex-1 flex flex-col">
         <div className="bg-white border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
