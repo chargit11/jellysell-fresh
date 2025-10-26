@@ -23,27 +23,37 @@ export default function Home() {
   useEffect(() => {
     // Handle OAuth callback
     const handleOAuthCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      
-      if (accessToken) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser(accessToken);
-          
-          if (user) {
-            // Store user info
-            localStorage.setItem('user_id', user.id);
-            localStorage.setItem('user_email', user.email);
+      // Check if we have a hash with access_token
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        
+        if (accessToken) {
+          try {
+            // Get user from Supabase using the token
+            const { data: { user }, error } = await supabase.auth.getUser(accessToken);
             
-            // Clear the hash from URL
+            if (error) throw error;
+            
+            if (user) {
+              // Store user info in localStorage
+              localStorage.setItem('user_id', user.id);
+              localStorage.setItem('user_email', user.email || '');
+              
+              // Clean up the URL
+              window.history.replaceState(null, '', window.location.pathname);
+              
+              // Redirect to dashboard
+              setTimeout(() => {
+                router.push('/dashboard');
+              }, 100);
+            }
+          } catch (error) {
+            console.error('Error handling OAuth callback:', error);
+            setError('Failed to complete sign in');
+            // Clean up URL even on error
             window.history.replaceState(null, '', window.location.pathname);
-            
-            // Redirect to dashboard
-            router.push('/dashboard');
           }
-        } catch (error) {
-          console.error('Error handling OAuth callback:', error);
-          setError('Failed to complete sign in');
         }
       }
     };
@@ -100,7 +110,7 @@ export default function Home() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${window.location.origin}/`
         }
       });
       
