@@ -50,8 +50,35 @@ export default function MessagesPage() {
   }, [conversationMessages]);
 
   const fetchUser = async () => {
+    console.log('🔍 Checking user authentication...');
+    
+    // First try Supabase auth
     const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
+    
+    if (user) {
+      console.log('✅ User found via Supabase:', user.email);
+      setUser(user);
+      setLoading(false);
+      return;
+    }
+    
+    // Fallback: Check localStorage (for users who logged in another way)
+    const userId = localStorage.getItem('user_id');
+    const userEmail = localStorage.getItem('user_email');
+    
+    console.log('📦 localStorage check:', { userId, userEmail });
+    
+    if (userId && userEmail) {
+      console.log('✅ User found via localStorage:', userEmail);
+      // Create a mock user object
+      setUser({ id: userId, email: userEmail });
+      setLoading(false);
+      return;
+    }
+    
+    // No user found
+    console.log('❌ No user found - please log in');
+    setUser(null);
     setLoading(false);
   };
 
@@ -263,7 +290,7 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen">
+        <div className="fixed left-0 top-0 h-screen z-50">
           <Sidebar />
         </div>
         <div className="flex-1 flex items-center justify-center ml-64">
@@ -276,7 +303,7 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen">
+        <div className="fixed left-0 top-0 h-screen z-50">
           <Sidebar />
         </div>
         <div className="flex-1 flex items-center justify-center ml-64">
@@ -293,7 +320,7 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-      <div className="fixed left-0 top-0 h-screen z-10">
+      <div className="fixed left-0 top-0 h-screen z-50">
         <Sidebar />
       </div>
       
