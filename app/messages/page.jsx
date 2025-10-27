@@ -178,7 +178,7 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
         <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
@@ -191,7 +191,7 @@ export default function MessagesPage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
         <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
@@ -208,18 +208,18 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
       <div className="fixed left-0 top-0 h-screen z-10">
         <Sidebar />
       </div>
       
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full">
       
       {selectedMessage ? (
         // Chat View
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-screen overflow-x-hidden">
           {/* Chat Header - Sticky */}
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4">
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => setSelectedMessage(null)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -243,21 +243,21 @@ export default function MessagesPage() {
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-4 bg-gray-50">
             {conversationMessages.map((msg, index) => {
               const isOutgoing = msg.direction === 'outgoing';
               
               return (
-                <div key={msg.message_id || index} className={`flex gap-3 ${isOutgoing ? 'flex-row-reverse' : ''}`}>
+                <div key={msg.message_id || index} className={`flex gap-3 max-w-full ${isOutgoing ? 'flex-row-reverse' : ''}`}>
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
                     alt={isOutgoing ? "You" : "Buyer"}
                     className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0"
                   />
-                  <div className={`flex-1 max-w-2xl ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
-                    <div className={`rounded-lg p-4 shadow-sm ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
-                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2">{msg.subject}</p>}
-                      <p className={`text-sm whitespace-pre-wrap ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
+                  <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
+                    <div className={`rounded-lg p-4 shadow-sm break-words overflow-wrap-anywhere ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
+                      <p className={`text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
                         {msg.body || msg.subject}
                       </p>
                     </div>
@@ -272,8 +272,8 @@ export default function MessagesPage() {
           </div>
 
           {/* Reply Input - Sticky */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
-            <div className="flex gap-4">
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
+            <div className="flex gap-4 max-w-full overflow-x-hidden">
               <textarea
                 placeholder="Type your reply..."
                 value={replyText}
@@ -299,14 +299,14 @@ export default function MessagesPage() {
         </div>
       ) : (
         // Messages List View
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
           {/* Top header bar with Messages title, searchbar, and auto-reply */}
-          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6">
+          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
             <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
             
-            <div className="flex-1"></div>
+            <div className="flex-1 min-w-0"></div>
 
-            <div className="max-w-md w-96">
+            <div className="max-w-md w-96 flex-shrink min-w-0">
               <div className="relative">
                 <input
                   type="text"
@@ -321,7 +321,7 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 whitespace-nowrap">
               Auto-reply
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -329,7 +329,7 @@ export default function MessagesPage() {
             </button>
           </div>
 
-          <div className="flex flex-1 min-w-0">
+          <div className="flex flex-1 min-w-0 overflow-hidden">
             {/* Messages Folders Sidebar */}
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
               <nav className="flex-1 px-4 py-4 space-y-1">
@@ -351,9 +351,9 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
               {/* Action buttons */}
-              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3">
+              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
@@ -408,7 +408,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages list */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 {filteredMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-64">
                     <p className="text-gray-500">No messages found</p>
@@ -418,7 +418,7 @@ export default function MessagesPage() {
                     {filteredMessages.map((message) => (
                       <div
                         key={message.message_id}
-                        className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer ${
+                        className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer max-w-full ${
                           !message.read ? 'bg-purple-50' : ''
                         }`}
                         onClick={() => openConversation(message)}
@@ -430,7 +430,7 @@ export default function MessagesPage() {
                             e.stopPropagation();
                             toggleSelectMessage(message.message_id);
                           }}
-                          className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
                         />
                         
                         <div className="flex-shrink-0">
@@ -441,17 +441,17 @@ export default function MessagesPage() {
                           />
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-gray-900 text-sm">{message.sender || 'eBay User'}</p>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center justify-between mb-1 gap-2">
+                            <div className="flex items-center gap-2 min-w-0 flex-shrink">
+                              <p className="font-semibold text-gray-900 text-sm truncate">{message.sender || 'eBay User'}</p>
                               {message.message_count && message.message_count > 1 && (
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
                                   {message.message_count}
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
                               {new Date(message.created_at).toLocaleDateString('en-US', { 
                                 month: 'short', 
                                 day: 'numeric', 
@@ -459,7 +459,7 @@ export default function MessagesPage() {
                               })}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 truncate">{message.subject || 'No subject'}</p>
+                          <p className="text-sm text-gray-600 truncate overflow-hidden">{message.subject || 'No subject'}</p>
                         </div>
                       </div>
                     ))}
