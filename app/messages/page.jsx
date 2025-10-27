@@ -132,7 +132,9 @@ export default function MessagesPage() {
         <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6">
           <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
           
-          <div className="flex-1 max-w-md">
+          <div className="flex-1"></div>
+
+          <div className="max-w-md w-96">
             <div className="relative">
               <input
                 type="text"
