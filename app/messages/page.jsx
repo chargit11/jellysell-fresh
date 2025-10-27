@@ -44,7 +44,7 @@ export default function MessagesPage() {
   };
 
   const fetchMessages = async () => {
-    console.log('Fetching all buyer messages from any eBay account');
+    console.log('Fetching all messages from ebay_messages table');
     console.log('Supabase URL:', 'https://qvhjmzdavsbauugubfcm.supabase.co');
     
     const { data, error } = await supabase
@@ -57,15 +57,20 @@ export default function MessagesPage() {
       return;
     }
 
-    // Filter out eBay system messages - only show messages from real buyers
-    const buyerMessages = (data || []).filter(msg => {
+    console.log('Total messages fetched:', data?.length || 0);
+    console.log('All messages:', data);
+
+    // Don't filter out YOUR messages - we need them to show sent history!
+    // Only filter out eBay system messages
+    const filteredMessages = (data || []).filter(msg => {
       const sender = (msg.sender || '').toLowerCase();
-      return sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
+      const isSystemMessage = sender === 'ebay' || sender === 'ebay user' || sender === '' || sender === 'unknown';
+      return !isSystemMessage;
     });
 
-    console.log('Total messages:', data?.length || 0);
-    console.log('Buyer messages (filtered):', buyerMessages.length);
-    setMessages(buyerMessages);
+    console.log('After filtering out system messages:', filteredMessages.length);
+    console.log('Unique senders:', [...new Set(filteredMessages.map(m => m.sender))]);
+    setMessages(filteredMessages);
   };
 
   const filterMessages = () => {
@@ -122,18 +127,19 @@ export default function MessagesPage() {
         // Incoming from buyer
         if (m.sender === buyerName) return true;
         
-        // Outgoing to buyer (with recipient field)
-        if (m.recipient === buyerName) return true;
+        // Outgoing to buyer (with recipient field - if column exists)
+        if (m.recipient && m.recipient === buyerName) return true;
         
         // Outgoing to buyer (fallback: message from you about same item/subject)
-        // This catches sent messages before recipient column was added
+        // This catches sent messages before recipient column was added OR if column doesn't exist
         if (m.sender === userEmail && m.item_id === message.item_id) return true;
-        if (m.sender === userEmail && m.subject?.includes(buyerName)) return true;
+        if (m.sender && m.sender === userEmail && m.subject?.includes(buyerName)) return true;
         
         return false;
       })
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
+    console.log(`Found ${allMessagesInConversation.length} messages in conversation with ${buyerName}`);
     setConversationMessages(allMessagesInConversation);
     setSelectedMessage(message);
   };
@@ -147,11 +153,28 @@ export default function MessagesPage() {
     setIsSending(true);
     
     try {
+      // Get current user email
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const userEmail = currentUser?.email || user?.email || 'You';
+
+      // First, verify the recipient column exists
+      const { error: schemaError } = await supabase
+        .from('ebay_messages')
+        .select('recipient')
+        .limit(1);
+
+      if (schemaError && schemaError.message.includes('recipient')) {
+        alert('ERROR: You need to add the "recipient" column to your ebay_messages table first!\n\nGo to Supabase SQL Editor and run:\n\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;');
+        console.error('Recipient column missing. Run this SQL in Supabase:\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;');
+        setIsSending(false);
+        return;
+      }
+
       // Insert message directly into database
       const { data, error } = await supabase
         .from('ebay_messages')
         .insert([{
-          sender: user.email || 'You', // Your username/email
+          sender: userEmail,
           recipient: selectedMessage.sender, // Buyer's username
           subject: `Re: ${selectedMessage.subject || 'Message'}`,
           body: replyText,
@@ -176,7 +199,6 @@ export default function MessagesPage() {
       console.log('Message sent successfully!');
       
       // Optional: Call eBay API to actually send via eBay (if you have that set up)
-      // This is separate from storing in your DB
       try {
         await fetch('/api/messages/send', {
           method: 'POST',
