@@ -50,35 +50,25 @@ export default function MessagesPage() {
   }, [conversationMessages]);
 
   const fetchUser = async () => {
-    console.log('🔍 Checking user authentication...');
-    
-    // First try Supabase auth
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      console.log('✅ User found via Supabase:', user.email);
-      setUser(user);
-      setLoading(false);
-      return;
-    }
-    
-    // Fallback: Check localStorage (for users who logged in another way)
+    // Check localStorage first (this is how your login works)
     const userId = localStorage.getItem('user_id');
     const userEmail = localStorage.getItem('user_email');
     
-    console.log('📦 localStorage check:', { userId, userEmail });
-    
-    if (userId && userEmail) {
-      console.log('✅ User found via localStorage:', userEmail);
-      // Create a mock user object
+    if (userId) {
+      // User is logged in via localStorage
       setUser({ id: userId, email: userEmail });
       setLoading(false);
       return;
     }
     
-    // No user found
-    console.log('❌ No user found - please log in');
-    setUser(null);
+    // Fallback: Try Supabase auth
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUser(user);
+    } else {
+      setUser(null);
+    }
+    
     setLoading(false);
   };
 
