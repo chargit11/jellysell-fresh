@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 const supabase = createClient(
   'https://qvhjmzdavsbauugubfcm.supabase.co',
@@ -10,7 +11,7 @@ const supabase = createClient(
 );
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useSidebar();
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
