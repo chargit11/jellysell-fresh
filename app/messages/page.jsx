@@ -41,6 +41,8 @@ export default function MessagesPage() {
   };
 
   const fetchMessages = async () => {
+    console.log('Fetching messages for user:', user.id);
+    
     const { data, error } = await supabase
       .from('ebay_messages')
       .select('*')
@@ -52,6 +54,7 @@ export default function MessagesPage() {
       return;
     }
 
+    console.log('Fetched messages:', data);
     setMessages(data || []);
   };
 
@@ -237,11 +240,7 @@ export default function MessagesPage() {
 
             {/* Messages list */}
             <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                </div>
-              ) : filteredMessages.length === 0 ? (
+              {filteredMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
                   <p className="text-gray-500">No messages found</p>
                 </div>
