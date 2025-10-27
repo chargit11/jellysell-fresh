@@ -187,7 +187,7 @@ export default function MessagesPage() {
       
       console.log('Recipient column exists! ✓');
 
-      // Prepare message data
+      // Prepare message data (don't include message_id - let database auto-generate it)
       const messageData = {
         sender: userEmail,
         recipient: selectedMessage.sender,
