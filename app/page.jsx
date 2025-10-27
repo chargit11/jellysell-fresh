@@ -1,461 +1,476 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 
 const supabase = createClient(
   'https://qvhjmzdavsbauugubfcm.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
-export default function Home() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [tweetsLoaded, setTweetsLoaded] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+export default function MessagesPage() {
+  const [messages, setMessages] = useState([]);
+  const [filteredMessages, setFilteredMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState('inbox');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [conversationMessages, setConversationMessages] = useState([]);
+  const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    // Handle OAuth callback
-    const handleOAuthCallback = async () => {
-      // Check if we have a hash with access_token
-      if (window.location.hash && window.location.hash.includes('access_token')) {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        
-        if (accessToken) {
-          try {
-            // Get user from Supabase using the token
-            const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-            
-            if (error) throw error;
-            
-            if (user) {
-              // Store user info in localStorage
-              localStorage.setItem('user_id', user.id);
-              localStorage.setItem('user_email', user.email || '');
-              
-              // Clean up the URL
-              window.history.replaceState(null, '', window.location.pathname);
-              
-              // Redirect to dashboard
-              setTimeout(() => {
-                router.push('/dashboard');
-              }, 100);
-            }
-          } catch (error) {
-            console.error('Error handling OAuth callback:', error);
-            setError('Failed to complete sign in');
-            // Clean up URL even on error
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-        }
-      }
-    };
+    fetchUser();
+  }, []);
 
-    handleOAuthCallback();
+  useEffect(() => {
+    if (user) {
+      fetchMessages();
+    }
+  }, [user]);
 
-    const script = document.createElement('script');
-    script.src = 'https://platform.twitter.com/widgets.js';
-    script.async = true;
-    script.charset = 'utf-8';
-    script.onload = () => {
-      setTweetsLoaded(true);
-      if (window.twttr) {
-        window.twttr.widgets.load();
-      }
-    };
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [router]);
+  useEffect(() => {
+    filterMessages();
+  }, [messages, currentFilter, searchQuery]);
 
-  const handleSignIn = async (e) => {
-    e.preventDefault();
-    setError('');
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+    setLoading(false);
+  };
+
+  const fetchMessages = async () => {
+    console.log('Fetching all buyer messages from any eBay account');
+    console.log('Supabase URL:', 'https://qvhjmzdavsbauugubfcm.supabase.co');
+    
+    const { data, error } = await supabase
+      .from('ebay_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching messages:', error);
+      return;
+    }
+
+    // Filter out eBay system messages - only show messages from real buyers
+    const buyerMessages = (data || []).filter(msg => {
+      const sender = (msg.sender || '').toLowerCase();
+      return sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
+    });
+
+    console.log('Total messages:', data?.length || 0);
+    console.log('Buyer messages (filtered):', buyerMessages.length);
+    setMessages(buyerMessages);
+  };
+
+  const filterMessages = () => {
+    let filtered = [...messages];
+
+    if (currentFilter === 'unread') {
+      filtered = filtered.filter(m => !m.read);
+    } else if (currentFilter === 'sent') {
+      filtered = [];
+    } else if (currentFilter === 'spam') {
+      filtered = [];
+    } else if (currentFilter === 'trash') {
+      filtered = [];
+    }
+
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(m =>
+        m.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.body?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Group messages by sender - show only the most recent message per sender
+    const groupedBySender = {};
+    filtered.forEach(msg => {
+      const sender = msg.sender || 'Unknown';
+      if (!groupedBySender[sender] || new Date(msg.created_at) > new Date(groupedBySender[sender].created_at)) {
+        groupedBySender[sender] = {
+          ...msg,
+          message_count: filtered.filter(m => m.sender === sender).length
+        };
+      }
+    });
+
+    setFilteredMessages(Object.values(groupedBySender));
+  };
+
+  const toggleSelectMessage = (messageId) => {
+    setSelectedMessages(prev =>
+      prev.includes(messageId)
+        ? prev.filter(id => id !== messageId)
+        : [...prev, messageId]
+    );
+  };
+
+  const openConversation = (message) => {
+    // Load all messages to/from this sender (both incoming and outgoing)
+    const allMessagesInConversation = messages
+      .filter(m => m.sender === message.sender)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    
+    setConversationMessages(allMessagesInConversation);
+    setSelectedMessage(message);
+  };
+
+  const sendReply = async () => {
+    if (!replyText.trim() || isSending) return;
+    
+    console.log('Sending reply to:', selectedMessage.sender);
+    console.log('Reply text:', replyText);
+    
+    setIsSending(true);
+    
     try {
-      const response = await fetch('/api/auth/login', {
+      // Send message via eBay API
+      const response = await fetch('/api/messages/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: selectedMessage.sender,
+          body: replyText,
+          itemId: selectedMessage.item_id,
+          user_id: user.id
+        })
       });
+
       const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('user_id', data.user_id);
-        localStorage.setItem('user_email', data.email);
-        router.push('/dashboard');
-      } else {
-        setError(data.error || 'Invalid credentials');
+
+      if (!response.ok) {
+        console.error('Failed to send message:', data);
+        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+        return;
       }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-    }
-  };
 
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setError('');
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
+      // Add to local state immediately
+      setMessages(prev => [...prev, data.data]);
+      setConversationMessages(prev => [...prev, data.data]);
       
-      if (error) {
-        setError('Failed to sign in with Google');
-        console.error('Google sign-in error:', error);
-      }
+      setReplyText('');
+      console.log('Message sent successfully via eBay!');
     } catch (error) {
-      setError('An error occurred with Google sign-in');
-      console.error('Google sign-in error:', error);
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Check console for details.');
+    } finally {
+      setIsSending(false);
     }
   };
+
+  const folders = [
+    { id: 'inbox', label: 'Inbox', count: messages.length },
+    { id: 'sent', label: 'Sent', count: 0 },
+    { id: 'all', label: 'All', count: messages.length },
+    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read).length },
+    { id: 'spam', label: 'Spam', count: 0 },
+    { id: 'trash', label: 'Trash', count: 0 },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="fixed left-0 top-0 h-screen">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex items-center justify-center ml-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="fixed left-0 top-0 h-screen">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex items-center justify-center ml-64">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Please log in to view messages</p>
+            <Link href="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
+              Go to Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {showSignInModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative">
-            <button onClick={() => setShowSignInModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="fixed left-0 top-0 h-screen z-10">
+        <Sidebar />
+      </div>
+      
+      <div className="flex-1 ml-64 overflow-x-hidden min-w-0">
+      
+      {selectedMessage ? (
+        // Chat View
+        <div className="flex flex-col h-screen overflow-x-hidden">
+          {/* Chat Header - Sticky */}
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 flex-shrink-0">
+            <button
+              onClick={() => setSelectedMessage(null)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <div className="flex items-center gap-3">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                alt="eBay"
+                className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200"
+              />
+              <div>
+                <h2 className="font-semibold text-gray-900">{selectedMessage.sender}</h2>
+                <p className="text-sm text-gray-500">{selectedMessage.subject}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-4 bg-gray-50">
+            {conversationMessages.map((msg, index) => {
+              const isOutgoing = msg.direction === 'outgoing';
+              
+              return (
+                <div key={msg.message_id || index} className={`flex gap-3 ${isOutgoing ? 'flex-row-reverse' : ''}`}>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                    alt={isOutgoing ? "You" : "Buyer"}
+                    className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0"
+                  />
+                  <div className={`flex-1 max-w-2xl ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
+                    <div className={`rounded-lg p-4 shadow-sm ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2">{msg.subject}</p>}
+                      <p className={`text-sm whitespace-pre-wrap ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
+                        {msg.body || msg.subject}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isOutgoing && 'You • '}
+                      {new Date(msg.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Reply Input - Sticky */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
+            <div className="flex gap-4 max-w-full overflow-x-hidden">
+              <textarea
+                placeholder="Type your reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendReply();
+                  }
+                }}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                rows={3}
+              />
+              <button 
+                onClick={sendReply}
+                disabled={!replyText.trim() || isSending}
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSending ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Messages List View
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          {/* Top header bar with Messages title, searchbar, and auto-reply */}
+          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0">
+            <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
+            
+            <div className="flex-1"></div>
+
+            <div className="max-w-md w-96">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search your messages"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                />
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0">
+              Auto-reply
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
-              <span className="text-xl font-bold text-gray-900">jellysell</span>
-            </div>
-            <h2 className="text-2xl font-bold text-center mb-6">Welcome back!</h2>
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+          </div>
+
+          <div className="flex flex-1 min-w-0 overflow-hidden">
+            {/* Messages Folders Sidebar */}
+            <div className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+              <nav className="flex-1 px-4 py-4 space-y-1">
+                {folders.map(folder => (
+                  <button
+                    key={folder.id}
+                    onClick={() => setCurrentFilter(folder.id)}
+                    className={`w-full text-left px-4 py-2 rounded-lg font-semibold flex items-center justify-between ${
+                      currentFilter === folder.id
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span>{folder.label}</span>
+                    <span className="text-sm text-gray-400">{folder.count}</span>
                   </button>
-                </div>
+                ))}
+              </nav>
+            </div>
+
+            {/* Messages List */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+              {/* Action buttons */}
+              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedMessages(filteredMessages.map(m => m.message_id));
+                    } else {
+                      setSelectedMessages([]);
+                    }
+                  }}
+                />
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Trash
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Mark Unread
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+                  </svg>
+                  Mark Read
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
+                  Report
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                  Archive
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  Label
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
               </div>
-              {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign In</button>
-              <div className="text-center"><a href="#" className="text-sm text-purple-600">Forgot your password?</a></div>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
-                <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
+
+              {/* Messages list */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                {filteredMessages.length === 0 ? (
+                  <div className="flex items-center justify-center h-64">
+                    <p className="text-gray-500">No messages found</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {filteredMessages.map((message) => (
+                      <div
+                        key={message.message_id}
+                        className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer ${
+                          !message.read ? 'bg-purple-50' : ''
+                        }`}
+                        onClick={() => openConversation(message)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedMessages.includes(message.message_id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleSelectMessage(message.message_id);
+                          }}
+                          className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        
+                        <div className="flex-shrink-0">
+                          <img
+                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                            alt="eBay"
+                            className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-gray-900 text-sm">{message.sender || 'eBay User'}</p>
+                              {message.message_count && message.message_count > 1 && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
+                                  {message.message_count}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(message.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">{message.subject || 'No subject'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button type="button" onClick={handleGoogleSignIn} className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span className="whitespace-nowrap">Continue with Google</span>
-              </button>
-              <p className="text-center text-sm text-gray-600 mt-6">Don't have an account? <button type="button" onClick={() => { setShowSignInModal(false); setShowSignUpModal(true); }} className="text-purple-600 font-semibold">Sign up</button></p>
-            </form>
+            </div>
           </div>
         </div>
       )}
-      {showSignUpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative">
-            <button onClick={() => setShowSignUpModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
-              <span className="text-xl font-bold text-gray-900">jellysell</span>
-            </div>
-            <h2 className="text-2xl font-bold text-center mb-6">Create your account</h2>
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg" required />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-              <button type="submit" className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Sign Up</button>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
-                <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">OR</span></div>
-              </div>
-              <button type="button" onClick={handleGoogleSignIn} className="w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 inline-flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span className="whitespace-nowrap">Continue with Google</span>
-              </button>
-              <p className="text-center text-sm text-gray-600 mt-6">Already have an account? <button type="button" onClick={() => { setShowSignUpModal(false); setShowSignInModal(true); }} className="text-purple-600 font-semibold">Sign in</button></p>
-            </form>
-          </div>
-        </div>
-      )}
-      <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
-        <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
-            <span className="text-xl font-bold text-gray-900">jellysell</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
-            <button onClick={() => setShowSignInModal(true)} className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50">Sign In</button>
-            <button onClick={() => setShowSignUpModal(true)} className="px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
-          </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </nav>
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4 px-6 space-y-4">
-            <a href="#features" className="block text-gray-600 hover:text-gray-900 font-medium">Features</a>
-            <Link href="/pricing" className="block text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
-            <button onClick={() => setShowSignInModal(true)} className="w-full px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50">Sign In</button>
-            <button onClick={() => setShowSignUpModal(true)} className="w-full px-6 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700">Get Started</button>
-          </div>
-        )}
-      </header>
-      <section className="h-screen flex items-center px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">Sell Everywhere,<br />Manage in One Place</h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">JellySell® is the FASTEST way to sell something online.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</button>
-            <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
-          </div>
-          <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
-        </div>
-      </section>
-      <section className="py-12 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wide mb-8">Connect with your favorite platforms</p>
-          <div className="flex flex-wrap justify-center items-center gap-12">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" alt="Etsy" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Poshmark_logo.png?20201202202741" alt="Poshmark" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Mercari_logo_2018.svg/1198px-Mercari_logo_2018.svg.png?20200825183145" alt="Mercari" className="h-8" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Depop_logo.svg/640px-Depop_logo.svg.png" alt="Depop" className="h-8" />
-          </div>
-        </div>
-      </section>
-      <section className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">See JellySell® in Action</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Experience the power of unified multi-platform management</p>
-          </div>
-          <div className="space-y-16">
-            <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-8 border border-purple-100">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Unified Dashboard</h3>
-              <p className="text-gray-600 mb-6">Monitor all your sales, inventory, and performance metrics in one place</p>
-              <div className="bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden">
-                <img src="https://i.ibb.co/cWfZQPL/Copy-of-Final-Exam-Card3.png" alt="Dashboard" className="w-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section id="features" className="py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Everything You Need to Grow</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Powerful tools designed for multi-platform sellers</p>
-          </div>
-          <div className="grid grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Multi-Platform Sync</h3>
-              <p className="text-gray-600">Automatically sync your inventory across eBay, Etsy, Poshmark, and Depop. Update once, sell everywhere.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Unified Inbox</h3>
-              <p className="text-gray-600">Manage all your customer messages from different platforms in one centralized inbox. Never miss a message.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Analytics Dashboard</h3>
-              <p className="text-gray-600">Track your sales, revenue, and performance across all platforms with beautiful, actionable insights.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Order Management</h3>
-              <p className="text-gray-600">Process orders from all your platforms in one place. Print shipping labels and track fulfillment easily.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Financial Tracking</h3>
-              <p className="text-gray-600">Monitor revenue, fees, and profits across all platforms. Export reports for accounting and tax purposes.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-200 transition-all">
-              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Bulk Actions</h3>
-              <p className="text-gray-600">Edit prices, update inventory, and manage listings in bulk. Save hours with powerful automation tools.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900">What sellers are saying</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-8">
-            <div>
-              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
-                <a href="https://twitter.com/okonomiyakeria/status/1954609024487567867"></a>
-              </blockquote>
-            </div>
-            <div>
-              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
-                <a href="https://twitter.com/WhirledJuice/status/1954611242041299068"></a>
-              </blockquote>
-            </div>
-            <div>
-              <blockquote className="twitter-tweet" data-conversation="none" data-theme="light">
-                <a href="https://twitter.com/YosClothes/status/1954617503046676874"></a>
-              </blockquote>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="py-24 px-6 bg-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
-          <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell® to manage their multi-platform businesses.</p>
-          <button onClick={() => setShowSignUpModal(true)} className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</button>
-          <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
-        </div>
-      </section>
-      <footer className="bg-slate-900 text-gray-400 py-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-4 gap-24 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8 brightness-0 invert" />
-                <span className="text-lg font-bold text-white">jellysell</span>
-              </div>
-              <p className="text-xs text-gray-400 leading-relaxed" style={{ maxWidth: '240px' }}>This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <div className="space-y-3">
-                <a href="#features" className="block text-gray-400 hover:text-white text-sm">Features</a>
-                <Link href="/pricing" className="block text-gray-400 hover:text-white text-sm">Pricing</Link>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Resources</h3>
-              <div className="space-y-3">
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">Help Center</a>
-                <a href="mailto:support@jellysell.com" className="block text-gray-400 hover:text-white text-sm">Contact Us</a>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <div className="space-y-3">
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 flex justify-center items-center relative">
-            <p className="text-sm text-gray-400">© 2025 HAN-E LLC / JellySell®</p>
-            <a href="https://x.com/jellysell_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors absolute right-0">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
