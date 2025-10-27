@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
-import { useSidebar } from '@/contexts/SidebarContext';
 
 const supabase = createClient(
   'https://qvhjmzdavsbauugubfcm.supabase.co',
@@ -12,7 +11,6 @@ const supabase = createClient(
 );
 
 export default function MessagesPage() {
-  const { collapsed } = useSidebar();
   const [messages, setMessages] = useState([]);
   const [filteredMessages, setFilteredMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -268,7 +266,7 @@ export default function MessagesPage() {
         <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
-        <div className={`flex-1 flex items-center justify-center ${collapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
+        <div className="flex-1 flex items-center justify-center ml-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
       </div>
@@ -281,7 +279,7 @@ export default function MessagesPage() {
         <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
-        <div className={`flex-1 flex items-center justify-center ${collapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
+        <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Please log in to view messages</p>
             <Link href="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
@@ -299,7 +297,7 @@ export default function MessagesPage() {
         <Sidebar />
       </div>
       
-      <div className={`flex-1 ${collapsed ? 'ml-20' : 'ml-64'} overflow-x-hidden min-w-0 max-w-full flex flex-col h-screen transition-all duration-300`}>{selectedMessage ? (
+      <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full flex flex-col h-screen">{selectedMessage ? (
         // Chat View
         <div className="flex flex-col h-screen overflow-x-hidden">
           {/* Chat Header - Sticky */}
