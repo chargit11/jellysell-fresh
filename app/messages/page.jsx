@@ -41,12 +41,12 @@ export default function MessagesPage() {
   };
 
   const fetchMessages = async () => {
-    console.log('Fetching messages for user:', user.id);
+    console.log('Fetching all buyer messages from any eBay account');
+    console.log('Supabase URL:', 'https://qvhjmzdavsbauugubfcm.supabase.co');
     
     const { data, error } = await supabase
       .from('ebay_messages')
       .select('*')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -54,8 +54,15 @@ export default function MessagesPage() {
       return;
     }
 
-    console.log('Fetched messages:', data);
-    setMessages(data || []);
+    // Filter out eBay system messages - only show messages from real buyers
+    const buyerMessages = (data || []).filter(msg => {
+      const sender = (msg.sender || '').toLowerCase();
+      return sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
+    });
+
+    console.log('Total messages:', data?.length || 0);
+    console.log('Buyer messages (filtered):', buyerMessages.length);
+    setMessages(buyerMessages);
   };
 
   const filterMessages = () => {
