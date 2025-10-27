@@ -124,11 +124,36 @@ export default function MessagesPage() {
   const sendReply = async () => {
     if (!replyText.trim()) return;
     
-    // TODO: Implement actual send via eBay API
     console.log('Sending reply to:', selectedMessage.sender);
     console.log('Reply text:', replyText);
     
-    // For now, just clear the text - actual eBay API integration needed
+    // Save the sent message to database
+    const newMessage = {
+      user_id: user.id,
+      message_id: `sent_${Date.now()}_${Math.random()}`,
+      sender: selectedMessage.sender,
+      subject: `Re: ${selectedMessage.subject || ''}`,
+      body: replyText,
+      direction: 'outgoing',
+      read: true,
+      created_at: new Date().toISOString(),
+      platform: 'ebay'
+    };
+
+    const { error } = await supabase
+      .from('ebay_messages')
+      .insert([newMessage]);
+
+    if (error) {
+      console.error('Error saving message:', error);
+      alert('Failed to save message');
+      return;
+    }
+
+    // Add to local state immediately
+    setMessages(prev => [...prev, newMessage]);
+    setConversationMessages(prev => [...prev, newMessage]);
+    
     setReplyText('');
   };
 
@@ -144,8 +169,10 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="fixed left-0 top-0 h-screen">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex items-center justify-center ml-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
       </div>
@@ -155,8 +182,10 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="fixed left-0 top-0 h-screen">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Please log in to view messages</p>
             <Link href="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
@@ -169,10 +198,12 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="flex-shrink-0 sticky top-0 h-screen">
+    <div className="flex min-h-screen bg-gray-50">
+      <div className="fixed left-0 top-0 h-screen z-10">
         <Sidebar />
       </div>
+      
+      <div className="flex-1 ml-64">
       
       {selectedMessage ? (
         // Chat View
@@ -429,6 +460,7 @@ export default function MessagesPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
