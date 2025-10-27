@@ -112,12 +112,12 @@ export default function MessagesPage() {
   };
 
   const openConversation = (message) => {
-    // Load all messages from this sender
-    const allMessagesFromSender = messages
+    // Load all messages to/from this sender (both incoming and outgoing)
+    const allMessagesInConversation = messages
       .filter(m => m.sender === message.sender)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
-    setConversationMessages(allMessagesFromSender);
+    setConversationMessages(allMessagesInConversation);
     setSelectedMessage(message);
   };
 
@@ -125,8 +125,10 @@ export default function MessagesPage() {
     if (!replyText.trim()) return;
     
     // TODO: Implement actual send via eBay API
-    console.log('Sending reply:', replyText);
-    alert('Send functionality will be implemented with eBay API integration');
+    console.log('Sending reply to:', selectedMessage.sender);
+    console.log('Reply text:', replyText);
+    
+    // For now, just clear the text - actual eBay API integration needed
     setReplyText('');
   };
 
@@ -168,7 +170,7 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 sticky top-0 h-screen">
         <Sidebar />
       </div>
       
@@ -201,24 +203,31 @@ export default function MessagesPage() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50">
-            {conversationMessages.map((msg, index) => (
-              <div key={msg.message_id || index} className="flex gap-3">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
-                  alt="Buyer"
-                  className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    {msg.subject && <p className="font-semibold text-sm text-gray-700 mb-2">{msg.subject}</p>}
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.body || msg.subject}</p>
+            {conversationMessages.map((msg, index) => {
+              const isOutgoing = msg.direction === 'outgoing';
+              
+              return (
+                <div key={msg.message_id || index} className={`flex gap-3 ${isOutgoing ? 'flex-row-reverse' : ''}`}>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                    alt={isOutgoing ? "You" : "Buyer"}
+                    className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0"
+                  />
+                  <div className={`flex-1 max-w-2xl ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
+                    <div className={`rounded-lg p-4 shadow-sm ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2">{msg.subject}</p>}
+                      <p className={`text-sm whitespace-pre-wrap ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
+                        {msg.body || msg.subject}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isOutgoing && 'You • '}
+                      {new Date(msg.created_at).toLocaleString()}
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(msg.created_at).toLocaleString()}
-                  </p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Reply Input */}
