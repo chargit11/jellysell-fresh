@@ -65,10 +65,20 @@ export default function Sidebar() {
     return count > 9 ? '9+' : count;
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    console.log('Logging out...');
+    
+    // Sign out from Supabase
+    await supabase.auth.signOut();
+    
+    // Clear localStorage
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_email');
+    
+    // Redirect to home
     router.push('/');
+    
+    console.log('Logged out successfully');
   };
 
   return (
