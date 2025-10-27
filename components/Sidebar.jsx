@@ -82,7 +82,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 sticky top-0`}>
+    <div className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 sticky top-0 z-50`}>
       <div className="p-6 flex items-center">
         {!collapsed && (
           <div className="flex items-center gap-3 flex-1">
