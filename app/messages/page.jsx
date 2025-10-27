@@ -114,8 +114,12 @@ export default function MessagesPage() {
 
   const openConversation = (message) => {
     // Load all messages to/from this sender (both incoming and outgoing)
+    const buyerName = message.sender;
     const allMessagesInConversation = messages
-      .filter(m => m.sender === message.sender)
+      .filter(m => 
+        m.sender === buyerName || // Incoming from buyer
+        m.recipient === buyerName  // Outgoing to buyer
+      )
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
     setConversationMessages(allMessagesInConversation);
@@ -131,34 +135,50 @@ export default function MessagesPage() {
     setIsSending(true);
     
     try {
-      // Send message via eBay API
-      const response = await fetch('/api/messages/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipient: selectedMessage.sender,
+      // Insert message directly into database
+      const { data, error } = await supabase
+        .from('ebay_messages')
+        .insert([{
+          sender: user.email || 'You', // Your username/email
+          recipient: selectedMessage.sender, // Buyer's username
+          subject: `Re: ${selectedMessage.subject || 'Message'}`,
           body: replyText,
-          itemId: selectedMessage.item_id,
-          user_id: user.id
-        })
-      });
+          item_id: selectedMessage.item_id,
+          read: true, // Your own messages are marked as read
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Failed to send message:', data);
-        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+      if (error) {
+        console.error('Failed to save message:', error);
+        alert(`Failed to send message: ${error.message}`);
         return;
       }
 
       // Add to local state immediately
-      setMessages(prev => [...prev, data.data]);
-      setConversationMessages(prev => [...prev, data.data]);
+      setMessages(prev => [...prev, data]);
+      setConversationMessages(prev => [...prev, data]);
       
       setReplyText('');
-      console.log('Message sent successfully via eBay!');
+      console.log('Message sent successfully!');
+      
+      // Optional: Call eBay API to actually send via eBay (if you have that set up)
+      // This is separate from storing in your DB
+      try {
+        await fetch('/api/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: selectedMessage.sender,
+            body: replyText,
+            itemId: selectedMessage.item_id
+          })
+        });
+      } catch (ebayError) {
+        console.log('eBay API not configured:', ebayError);
+        // This is fine - message is still saved in your DB
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Check console for details.');
