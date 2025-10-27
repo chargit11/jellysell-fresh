@@ -1,9 +1,13 @@
-import './globals.css'
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SidebarProvider>
+          {children}
+        </SidebarProvider>
+      </body>
     </html>
-  )
+  );
 }
