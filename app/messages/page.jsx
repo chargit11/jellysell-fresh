@@ -115,11 +115,23 @@ export default function MessagesPage() {
   const openConversation = (message) => {
     // Load all messages to/from this sender (both incoming and outgoing)
     const buyerName = message.sender;
+    const userEmail = user?.email || '';
+    
     const allMessagesInConversation = messages
-      .filter(m => 
-        m.sender === buyerName || // Incoming from buyer
-        m.recipient === buyerName  // Outgoing to buyer
-      )
+      .filter(m => {
+        // Incoming from buyer
+        if (m.sender === buyerName) return true;
+        
+        // Outgoing to buyer (with recipient field)
+        if (m.recipient === buyerName) return true;
+        
+        // Outgoing to buyer (fallback: message from you about same item/subject)
+        // This catches sent messages before recipient column was added
+        if (m.sender === userEmail && m.item_id === message.item_id) return true;
+        if (m.sender === userEmail && m.subject?.includes(buyerName)) return true;
+        
+        return false;
+      })
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
     setConversationMessages(allMessagesInConversation);
