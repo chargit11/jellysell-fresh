@@ -21,6 +21,7 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [conversationMessages, setConversationMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     fetchUser();
@@ -122,39 +123,48 @@ export default function MessagesPage() {
   };
 
   const sendReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || isSending) return;
     
     console.log('Sending reply to:', selectedMessage.sender);
     console.log('Reply text:', replyText);
     
-    // Save the sent message to database
-    const newMessage = {
-      user_id: user.id,
-      message_id: `sent_${Date.now()}_${Math.random()}`,
-      sender: selectedMessage.sender,
-      subject: `Re: ${selectedMessage.subject || ''}`,
-      body: replyText,
-      direction: 'outgoing',
-      read: true,
-      created_at: new Date().toISOString(),
-      platform: 'ebay'
-    };
-
-    const { error } = await supabase
-      .from('ebay_messages')
-      .insert([newMessage]);
-
-    if (error) {
-      console.error('Error saving message:', error);
-      alert('Failed to save message');
-      return;
-    }
-
-    // Add to local state immediately
-    setMessages(prev => [...prev, newMessage]);
-    setConversationMessages(prev => [...prev, newMessage]);
+    setIsSending(true);
     
-    setReplyText('');
+    try {
+      // Send message via eBay API
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: selectedMessage.sender,
+          body: replyText,
+          itemId: selectedMessage.item_id,
+          user_id: user.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to send message:', data);
+        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Add to local state immediately
+      setMessages(prev => [...prev, data.data]);
+      setConversationMessages(prev => [...prev, data.data]);
+      
+      setReplyText('');
+      console.log('Message sent successfully via eBay!');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Check console for details.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const folders = [
@@ -207,9 +217,9 @@ export default function MessagesPage() {
       
       {selectedMessage ? (
         // Chat View
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Chat Header */}
-          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4">
+        <div className="flex flex-col h-screen">
+          {/* Chat Header - Sticky */}
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4">
             <button
               onClick={() => setSelectedMessage(null)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -261,8 +271,8 @@ export default function MessagesPage() {
             })}
           </div>
 
-          {/* Reply Input */}
-          <div className="bg-white border-t border-gray-200 p-6">
+          {/* Reply Input - Sticky */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
             <div className="flex gap-4">
               <textarea
                 placeholder="Type your reply..."
@@ -279,10 +289,10 @@ export default function MessagesPage() {
               />
               <button 
                 onClick={sendReply}
-                disabled={!replyText.trim()}
+                disabled={!replyText.trim() || isSending}
                 className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send
+                {isSending ? 'Sending...' : 'Send'}
               </button>
             </div>
           </div>
