@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
@@ -22,11 +22,6 @@ export default function MessagesPage() {
   const [conversationMessages, setConversationMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   useEffect(() => {
     fetchUser();
@@ -42,38 +37,14 @@ export default function MessagesPage() {
     filterMessages();
   }, [messages, currentFilter, searchQuery]);
 
-  // Auto-scroll to bottom when conversation changes
-  useEffect(() => {
-    if (conversationMessages.length > 0) {
-      scrollToBottom();
-    }
-  }, [conversationMessages]);
-
   const fetchUser = async () => {
-    // Check localStorage first (this is how your login works)
-    const userId = localStorage.getItem('user_id');
-    const userEmail = localStorage.getItem('user_email');
-    
-    if (userId) {
-      // User is logged in via localStorage
-      setUser({ id: userId, email: userEmail });
-      setLoading(false);
-      return;
-    }
-    
-    // Fallback: Try Supabase auth
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUser(user);
-    } else {
-      setUser(null);
-    }
-    
+    setUser(user);
     setLoading(false);
   };
 
   const fetchMessages = async () => {
-    console.log('Fetching all messages from ebay_messages table');
+    console.log('Fetching all buyer messages from any eBay account');
     console.log('Supabase URL:', 'https://qvhjmzdavsbauugubfcm.supabase.co');
     
     const { data, error } = await supabase
@@ -86,20 +57,15 @@ export default function MessagesPage() {
       return;
     }
 
-    console.log('Total messages fetched:', data?.length || 0);
-    console.log('All messages:', data);
-
-    // Don't filter out YOUR messages - we need them to show sent history!
-    // Only filter out eBay system messages
-    const filteredMessages = (data || []).filter(msg => {
+    // Filter out eBay system messages - only show messages from real buyers
+    const buyerMessages = (data || []).filter(msg => {
       const sender = (msg.sender || '').toLowerCase();
-      const isSystemMessage = sender === 'ebay' || sender === 'ebay user' || sender === '' || sender === 'unknown';
-      return !isSystemMessage;
+      return sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
     });
 
-    console.log('After filtering out system messages:', filteredMessages.length);
-    console.log('Unique senders:', [...new Set(filteredMessages.map(m => m.sender))]);
-    setMessages(filteredMessages);
+    console.log('Total messages:', data?.length || 0);
+    console.log('Buyer messages (filtered):', buyerMessages.length);
+    setMessages(buyerMessages);
   };
 
   const filterMessages = () => {
@@ -148,121 +114,54 @@ export default function MessagesPage() {
 
   const openConversation = (message) => {
     // Load all messages to/from this sender (both incoming and outgoing)
-    const buyerName = message.sender;
-    const userEmail = user?.email || '';
-    
     const allMessagesInConversation = messages
-      .filter(m => {
-        // Incoming from buyer
-        if (m.sender === buyerName) return true;
-        
-        // Outgoing to buyer (with recipient field - if column exists)
-        if (m.recipient && m.recipient === buyerName) return true;
-        
-        // Outgoing to buyer (fallback: message from you about same item/subject)
-        // This catches sent messages before recipient column was added OR if column doesn't exist
-        if (m.sender === userEmail && m.item_id === message.item_id) return true;
-        if (m.sender && m.sender === userEmail && m.subject?.includes(buyerName)) return true;
-        
-        return false;
-      })
+      .filter(m => m.sender === message.sender)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
-    console.log(`Found ${allMessagesInConversation.length} messages in conversation with ${buyerName}`);
     setConversationMessages(allMessagesInConversation);
     setSelectedMessage(message);
   };
 
   const sendReply = async () => {
-    if (!replyText.trim()) {
-      alert('Please type a message first!');
-      return;
-    }
+    if (!replyText.trim() || isSending) return;
     
-    if (isSending) {
-      console.log('Already sending, please wait...');
-      return;
-    }
-    
-    console.log('=== SEND MESSAGE DEBUG START ===');
-    console.log('Selected message:', selectedMessage);
+    console.log('Sending reply to:', selectedMessage.sender);
     console.log('Reply text:', replyText);
-    console.log('User:', user);
     
     setIsSending(true);
     
     try {
-      // Get current user email
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const userEmail = currentUser?.email || user?.email || 'You';
-      
-      console.log('User email:', userEmail);
+      // Send message via eBay API
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: selectedMessage.sender,
+          body: replyText,
+          itemId: selectedMessage.item_id,
+          user_id: user.id
+        })
+      });
 
-      // Test if recipient column exists
-      console.log('Testing if recipient column exists...');
-      const { error: schemaError } = await supabase
-        .from('ebay_messages')
-        .select('recipient')
-        .limit(1);
+      const data = await response.json();
 
-      if (schemaError) {
-        console.error('Schema error:', schemaError);
-        if (schemaError.message.includes('recipient') || schemaError.code === 'PGRST116') {
-          alert('❌ ERROR: The "recipient" column does NOT exist in your database!\n\n🔧 FIX: Go to Supabase SQL Editor and run:\n\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;\n\nThen try again.');
-          setIsSending(false);
-          return;
-        }
-      }
-      
-      console.log('Recipient column exists! ✓');
-
-      // Prepare message data (don't include message_id - let database auto-generate it)
-      const messageData = {
-        sender: userEmail,
-        recipient: selectedMessage.sender,
-        subject: `Re: ${selectedMessage.subject || 'Message'}`,
-        body: replyText,
-        item_id: selectedMessage.item_id,
-        read: true,
-        created_at: new Date().toISOString()
-      };
-      
-      console.log('Inserting message:', messageData);
-
-      // Insert message directly into database
-      const { data, error } = await supabase
-        .from('ebay_messages')
-        .insert([messageData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Insert failed:', error);
-        alert(`Failed to send message: ${error.message}\n\nCheck console for details.`);
-        setIsSending(false);
+      if (!response.ok) {
+        console.error('Failed to send message:', data);
+        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
         return;
       }
 
-      console.log('✅ Message inserted successfully:', data);
-
       // Add to local state immediately
-      setMessages(prev => {
-        console.log('Adding to messages array, current count:', prev.length);
-        return [...prev, data];
-      });
-      
-      setConversationMessages(prev => {
-        console.log('Adding to conversation, current count:', prev.length);
-        return [...prev, data];
-      });
+      setMessages(prev => [...prev, data.data]);
+      setConversationMessages(prev => [...prev, data.data]);
       
       setReplyText('');
-      console.log('✅ Message sent successfully!');
-      console.log('=== SEND MESSAGE DEBUG END ===');
-      
+      console.log('Message sent successfully via eBay!');
     } catch (error) {
-      console.error('❌ Unexpected error:', error);
-      alert(`Unexpected error: ${error.message}\n\nCheck console for details.`);
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Check console for details.');
     } finally {
       setIsSending(false);
     }
@@ -280,7 +179,7 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen z-50">
+        <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
         <div className="flex-1 flex items-center justify-center ml-64">
@@ -293,7 +192,7 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen z-50">
+        <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
         <div className="flex-1 flex items-center justify-center ml-64">
@@ -310,11 +209,13 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-      <div className="fixed left-0 top-0 h-screen z-50">
+      <div className="fixed left-0 top-0 h-screen z-10">
         <Sidebar />
       </div>
       
-      <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full flex flex-col h-screen">{selectedMessage ? (
+      <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full">
+      
+      {selectedMessage ? (
         // Chat View
         <div className="flex flex-col h-screen overflow-x-hidden">
           {/* Chat Header - Sticky */}
@@ -343,29 +244,8 @@ export default function MessagesPage() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-4 bg-gray-50">
-            {conversationMessages.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                No messages in this conversation yet
-              </div>
-            )}
             {conversationMessages.map((msg, index) => {
-              // A message is outgoing if YOU sent it (not the buyer)
-              const userEmail = user?.email || '';
-              const buyerName = selectedMessage.sender;
-              
-              // Message is outgoing if:
-              // 1. sender is your email, OR
-              // 2. recipient is the buyer name
-              const isOutgoing = msg.sender === userEmail || msg.recipient === buyerName;
-              
-              console.log(`Message ${index}:`, {
-                sender: msg.sender,
-                recipient: msg.recipient,
-                userEmail,
-                buyerName,
-                isOutgoing,
-                body: msg.body?.substring(0, 50)
-              });
+              const isOutgoing = msg.direction === 'outgoing';
               
               return (
                 <div key={msg.message_id || index} className={`flex gap-3 max-w-full ${isOutgoing ? 'flex-row-reverse' : ''}`}>
@@ -376,7 +256,7 @@ export default function MessagesPage() {
                   />
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words overflow-wrap-anywhere ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
-                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm mb-2 break-words">{msg.subject}</p>}
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
                       <p className={`text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
                         {msg.body || msg.subject}
                       </p>
@@ -389,7 +269,6 @@ export default function MessagesPage() {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Reply Input - Sticky */}
@@ -420,9 +299,9 @@ export default function MessagesPage() {
         </div>
       ) : (
         // Messages List View
-        <div className="flex flex-col h-screen overflow-hidden">
-          {/* Top header bar with Messages title, searchbar, and auto-reply - STICKY */}
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          {/* Top header bar with Messages title, searchbar, and auto-reply */}
+          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
             <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
             
             <div className="flex-1 min-w-0"></div>
@@ -472,9 +351,9 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              {/* Action buttons - STICKY */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
+            <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+              {/* Action buttons */}
+              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
