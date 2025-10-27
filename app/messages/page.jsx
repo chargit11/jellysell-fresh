@@ -137,7 +137,69 @@ export default function MessagesPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col">
+      {selectedMessage ? (
+        // Chat View
+        <div className="flex-1 flex flex-col">
+          {/* Chat Header */}
+          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4">
+            <button
+              onClick={() => setSelectedMessage(null)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <div className="flex items-center gap-3">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                alt="eBay"
+                className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200"
+              />
+              <div>
+                <h2 className="font-semibold text-gray-900">{selectedMessage.sender}</h2>
+                <p className="text-sm text-gray-500">{selectedMessage.subject}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-8 space-y-4">
+            <div className="flex gap-3">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                alt="Buyer"
+                className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0"
+              />
+              <div className="flex-1">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedMessage.body || selectedMessage.subject}</p>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(selectedMessage.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reply Input */}
+          <div className="bg-white border-t border-gray-200 p-6">
+            <div className="flex gap-4">
+              <textarea
+                placeholder="Type your reply..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                rows={3}
+              />
+              <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit">
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Messages List View
+        <div className="flex-1 flex flex-col">
         {/* Top header bar with Messages title, searchbar, and auto-reply */}
         <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6">
           <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
@@ -306,7 +368,7 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
