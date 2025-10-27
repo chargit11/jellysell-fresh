@@ -145,10 +145,20 @@ export default function MessagesPage() {
   };
 
   const sendReply = async () => {
-    if (!replyText.trim() || isSending) return;
+    if (!replyText.trim()) {
+      alert('Please type a message first!');
+      return;
+    }
     
-    console.log('Sending reply to:', selectedMessage.sender);
+    if (isSending) {
+      console.log('Already sending, please wait...');
+      return;
+    }
+    
+    console.log('=== SEND MESSAGE DEBUG START ===');
+    console.log('Selected message:', selectedMessage);
     console.log('Reply text:', replyText);
+    console.log('User:', user);
     
     setIsSending(true);
     
@@ -156,66 +166,74 @@ export default function MessagesPage() {
       // Get current user email
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       const userEmail = currentUser?.email || user?.email || 'You';
+      
+      console.log('User email:', userEmail);
 
-      // First, verify the recipient column exists
+      // Test if recipient column exists
+      console.log('Testing if recipient column exists...');
       const { error: schemaError } = await supabase
         .from('ebay_messages')
         .select('recipient')
         .limit(1);
 
-      if (schemaError && schemaError.message.includes('recipient')) {
-        alert('ERROR: You need to add the "recipient" column to your ebay_messages table first!\n\nGo to Supabase SQL Editor and run:\n\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;');
-        console.error('Recipient column missing. Run this SQL in Supabase:\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;');
-        setIsSending(false);
-        return;
+      if (schemaError) {
+        console.error('Schema error:', schemaError);
+        if (schemaError.message.includes('recipient') || schemaError.code === 'PGRST116') {
+          alert('❌ ERROR: The "recipient" column does NOT exist in your database!\n\n🔧 FIX: Go to Supabase SQL Editor and run:\n\nALTER TABLE ebay_messages ADD COLUMN recipient TEXT;\n\nThen try again.');
+          setIsSending(false);
+          return;
+        }
       }
+      
+      console.log('Recipient column exists! ✓');
+
+      // Prepare message data
+      const messageData = {
+        sender: userEmail,
+        recipient: selectedMessage.sender,
+        subject: `Re: ${selectedMessage.subject || 'Message'}`,
+        body: replyText,
+        item_id: selectedMessage.item_id,
+        read: true,
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('Inserting message:', messageData);
 
       // Insert message directly into database
       const { data, error } = await supabase
         .from('ebay_messages')
-        .insert([{
-          sender: userEmail,
-          recipient: selectedMessage.sender, // Buyer's username
-          subject: `Re: ${selectedMessage.subject || 'Message'}`,
-          body: replyText,
-          item_id: selectedMessage.item_id,
-          read: true, // Your own messages are marked as read
-          created_at: new Date().toISOString()
-        }])
+        .insert([messageData])
         .select()
         .single();
 
       if (error) {
-        console.error('Failed to save message:', error);
-        alert(`Failed to send message: ${error.message}`);
+        console.error('❌ Insert failed:', error);
+        alert(`Failed to send message: ${error.message}\n\nCheck console for details.`);
+        setIsSending(false);
         return;
       }
 
+      console.log('✅ Message inserted successfully:', data);
+
       // Add to local state immediately
-      setMessages(prev => [...prev, data]);
-      setConversationMessages(prev => [...prev, data]);
+      setMessages(prev => {
+        console.log('Adding to messages array, current count:', prev.length);
+        return [...prev, data];
+      });
+      
+      setConversationMessages(prev => {
+        console.log('Adding to conversation, current count:', prev.length);
+        return [...prev, data];
+      });
       
       setReplyText('');
-      console.log('Message sent successfully!');
+      console.log('✅ Message sent successfully!');
+      console.log('=== SEND MESSAGE DEBUG END ===');
       
-      // Optional: Call eBay API to actually send via eBay (if you have that set up)
-      try {
-        await fetch('/api/messages/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipient: selectedMessage.sender,
-            body: replyText,
-            itemId: selectedMessage.item_id
-          })
-        });
-      } catch (ebayError) {
-        console.log('eBay API not configured:', ebayError);
-        // This is fine - message is still saved in your DB
-      }
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message. Check console for details.');
+      console.error('❌ Unexpected error:', error);
+      alert(`Unexpected error: ${error.message}\n\nCheck console for details.`);
     } finally {
       setIsSending(false);
     }
@@ -298,8 +316,29 @@ export default function MessagesPage() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-4 bg-gray-50">
+            {conversationMessages.length === 0 && (
+              <div className="text-center text-gray-500 py-8">
+                No messages in this conversation yet
+              </div>
+            )}
             {conversationMessages.map((msg, index) => {
-              const isOutgoing = msg.direction === 'outgoing';
+              // A message is outgoing if YOU sent it (not the buyer)
+              const userEmail = user?.email || '';
+              const buyerName = selectedMessage.sender;
+              
+              // Message is outgoing if:
+              // 1. sender is your email, OR
+              // 2. recipient is the buyer name
+              const isOutgoing = msg.sender === userEmail || msg.recipient === buyerName;
+              
+              console.log(`Message ${index}:`, {
+                sender: msg.sender,
+                recipient: msg.recipient,
+                userEmail,
+                buyerName,
+                isOutgoing,
+                body: msg.body?.substring(0, 50)
+              });
               
               return (
                 <div key={msg.message_id || index} className={`flex gap-3 max-w-full ${isOutgoing ? 'flex-row-reverse' : ''}`}>
@@ -310,7 +349,7 @@ export default function MessagesPage() {
                   />
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words overflow-wrap-anywhere ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
-                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm mb-2 break-words">{msg.subject}</p>}
                       <p className={`text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
                         {msg.body || msg.subject}
                       </p>
