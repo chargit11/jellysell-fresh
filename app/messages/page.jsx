@@ -83,14 +83,19 @@ export default function MessagesPage() {
   const filterMessages = () => {
     let filtered = [...messages];
 
+    // Filter out deleted messages by default (except when viewing trash)
+    if (currentFilter !== 'trash') {
+      filtered = filtered.filter(m => !m.deleted);
+    }
+
     if (currentFilter === 'unread') {
-      filtered = filtered.filter(m => !m.read);
+      filtered = filtered.filter(m => !m.read && !m.deleted);
     } else if (currentFilter === 'sent') {
       filtered = [];
     } else if (currentFilter === 'spam') {
       filtered = [];
     } else if (currentFilter === 'trash') {
-      filtered = [];
+      filtered = filtered.filter(m => m.deleted);
     }
 
     if (searchQuery.trim()) {
@@ -179,13 +184,97 @@ export default function MessagesPage() {
     }
   };
 
+  const handleTrash = async () => {
+    if (selectedMessages.length === 0) return;
+
+    try {
+      // Update messages in database to mark as deleted
+      const { error } = await supabase
+        .from('ebay_messages')
+        .update({ deleted: true })
+        .in('message_id', selectedMessages);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        selectedMessages.includes(msg.message_id) 
+          ? { ...msg, deleted: true }
+          : msg
+      ));
+
+      // Clear selection
+      setSelectedMessages([]);
+      console.log('Messages moved to trash');
+    } catch (error) {
+      console.error('Error moving to trash:', error);
+      alert('Failed to move messages to trash');
+    }
+  };
+
+  const handleMarkUnread = async () => {
+    if (selectedMessages.length === 0) return;
+
+    try {
+      // Update messages in database to mark as unread
+      const { error } = await supabase
+        .from('ebay_messages')
+        .update({ read: false })
+        .in('message_id', selectedMessages);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        selectedMessages.includes(msg.message_id) 
+          ? { ...msg, read: false }
+          : msg
+      ));
+
+      // Clear selection
+      setSelectedMessages([]);
+      console.log('Messages marked as unread');
+    } catch (error) {
+      console.error('Error marking as unread:', error);
+      alert('Failed to mark messages as unread');
+    }
+  };
+
+  const handleMarkRead = async () => {
+    if (selectedMessages.length === 0) return;
+
+    try {
+      // Update messages in database to mark as read
+      const { error } = await supabase
+        .from('ebay_messages')
+        .update({ read: true })
+        .in('message_id', selectedMessages);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        selectedMessages.includes(msg.message_id) 
+          ? { ...msg, read: true }
+          : msg
+      ));
+
+      // Clear selection
+      setSelectedMessages([]);
+      console.log('Messages marked as read');
+    } catch (error) {
+      console.error('Error marking as read:', error);
+      alert('Failed to mark messages as read');
+    }
+  };
+
   const folders = [
-    { id: 'inbox', label: 'Inbox', count: messages.length },
+    { id: 'inbox', label: 'Inbox', count: messages.filter(m => !m.deleted).length },
     { id: 'sent', label: 'Sent', count: 0 },
-    { id: 'all', label: 'All', count: messages.length },
-    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read).length },
+    { id: 'all', label: 'All', count: messages.filter(m => !m.deleted).length },
+    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read && !m.deleted).length },
     { id: 'spam', label: 'Spam', count: 0 },
-    { id: 'trash', label: 'Trash', count: 0 },
+    { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted).length },
   ];
 
   if (loading) {
@@ -379,19 +468,31 @@ export default function MessagesPage() {
                     }
                   }}
                 />
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                <button 
+                  onClick={handleTrash}
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                   Trash
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                <button 
+                  onClick={handleMarkUnread}
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   Mark Unread
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                <button 
+                  onClick={handleMarkRead}
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
                   </svg>
