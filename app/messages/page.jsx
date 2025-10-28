@@ -443,6 +443,7 @@ export default function MessagesPage() {
                             e.stopPropagation();
                             toggleSelectMessage(message.message_id);
                           }}
+                          onClick={(e) => e.stopPropagation()}
                           className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
                         />
                         
