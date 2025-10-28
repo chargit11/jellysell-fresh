@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
 const supabase = createClient(
-  'https://qvhjmzdavsbauugubfcm.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export default function MessagesPage() {
@@ -22,6 +21,11 @@ export default function MessagesPage() {
   const [conversationMessages, setConversationMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     fetchUser();
@@ -37,83 +41,86 @@ export default function MessagesPage() {
     filterMessages();
   }, [messages, currentFilter, searchQuery]);
 
+  // Auto-scroll to bottom when conversation changes
+  useEffect(() => {
+    if (conversationMessages.length > 0) {
+      scrollToBottom();
+    }
+  }, [conversationMessages]);
+
   const fetchUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    setLoading(false);
+    if (!user) {
+      setLoading(false);
+    }
   };
 
   const fetchMessages = async () => {
-    console.log('Fetching all buyer messages from any eBay account');
-    console.log('Supabase URL:', 'https://qvhjmzdavsbauugubfcm.supabase.co');
-    
+    setLoading(true);
     const { data, error } = await supabase
       .from('ebay_messages')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching messages:', error);
-      return;
+    } else {
+      setMessages(data || []);
     }
-
-    // Filter out eBay system messages - only show messages from real buyers
-    const buyerMessages = (data || []).filter(msg => {
-      const sender = (msg.sender || '').toLowerCase();
-      return sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
-    });
-
-    console.log('Total messages:', data?.length || 0);
-    console.log('Buyer messages (filtered):', buyerMessages.length);
-    setMessages(buyerMessages);
+    setLoading(false);
   };
 
   const filterMessages = () => {
     let filtered = [...messages];
 
-    if (currentFilter === 'unread') {
-      filtered = filtered.filter(m => !m.read);
-    } else if (currentFilter === 'sent') {
-      filtered = [];
-    } else if (currentFilter === 'spam') {
-      filtered = [];
-    } else if (currentFilter === 'trash') {
-      filtered = [];
-    }
-
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(m =>
-        m.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.body?.toLowerCase().includes(searchQuery.toLowerCase())
+    if (searchQuery) {
+      filtered = filtered.filter(msg => 
+        msg.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.body?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Group messages by sender - show only the most recent message per sender
-    const groupedBySender = {};
-    filtered.forEach(msg => {
-      const sender = msg.sender || 'Unknown';
-      if (!groupedBySender[sender] || new Date(msg.created_at) > new Date(groupedBySender[sender].created_at)) {
-        groupedBySender[sender] = {
-          ...msg,
-          message_count: filtered.filter(m => m.sender === sender).length
-        };
-      }
-    });
+    switch (currentFilter) {
+      case 'inbox':
+        break;
+      case 'sent':
+        filtered = filtered.filter(msg => msg.direction === 'outgoing');
+        break;
+      case 'unread':
+        filtered = filtered.filter(msg => !msg.read);
+        break;
+      case 'all':
+        break;
+      case 'spam':
+        filtered = filtered.filter(msg => msg.spam);
+        break;
+      case 'trash':
+        filtered = filtered.filter(msg => msg.deleted);
+        break;
+      default:
+        break;
+    }
 
-    setFilteredMessages(Object.values(groupedBySender));
+    setFilteredMessages(filtered);
+  };
+
+  const syncMessages = async () => {
+    console.log('Syncing messages from eBay...');
+    await fetchMessages();
   };
 
   const toggleSelectMessage = (messageId) => {
-    setSelectedMessages(prev =>
-      prev.includes(messageId)
+    setSelectedMessages(prev => 
+      prev.includes(messageId) 
         ? prev.filter(id => id !== messageId)
         : [...prev, messageId]
     );
   };
 
   const openConversation = (message) => {
-    // Load all messages to/from this sender (both incoming and outgoing)
     const allMessagesInConversation = messages
       .filter(m => m.sender === message.sender)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -123,67 +130,74 @@ export default function MessagesPage() {
   };
 
   const sendReply = async () => {
-    if (!replyText.trim() || isSending) return;
-    
-    console.log('Sending reply to:', selectedMessage.sender);
-    console.log('Reply text:', replyText);
+    if (!replyText.trim()) return;
     
     setIsSending(true);
     
     try {
-      // Send message via eBay API
-      const response = await fetch('/api/messages/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipient: selectedMessage.sender,
+      const { data, error } = await supabase
+        .from('ebay_messages')
+        .insert({
+          user_id: user.id,
+          sender: selectedMessage.sender,
+          subject: `Re: ${selectedMessage.subject}`,
           body: replyText,
-          itemId: selectedMessage.item_id,
-          user_id: user.id
+          direction: 'outgoing',
+          read: true,
+          created_at: new Date().toISOString()
         })
-      });
+        .select()
+        .single();
 
-      const data = await response.json();
+      if (error) throw error;
 
-      if (!response.ok) {
-        console.error('Failed to send message:', data);
-        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
-        return;
-      }
-
-      // Add to local state immediately
-      setMessages(prev => [...prev, data.data]);
-      setConversationMessages(prev => [...prev, data.data]);
-      
+      setConversationMessages(prev => [...prev, data]);
+      setMessages(prev => [data, ...prev]);
       setReplyText('');
-      console.log('Message sent successfully via eBay!');
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message. Check console for details.');
+      console.error('Error sending reply:', error);
+      alert('Failed to send message');
     } finally {
       setIsSending(false);
     }
   };
 
   const folders = [
-    { id: 'inbox', label: 'Inbox', count: messages.length },
-    { id: 'sent', label: 'Sent', count: 0 },
+    { id: 'inbox', label: 'Inbox', count: messages.filter(m => m.direction !== 'outgoing' && !m.read).length },
+    { id: 'sent', label: 'Sent', count: messages.filter(m => m.direction === 'outgoing').length },
     { id: 'all', label: 'All', count: messages.length },
     { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read).length },
     { id: 'spam', label: 'Spam', count: 0 },
     { id: 'trash', label: 'Trash', count: 0 },
   ];
 
+  // Group messages by sender
+  const groupedMessages = filteredMessages.reduce((acc, message) => {
+    const sender = message.sender;
+    if (!acc[sender]) {
+      acc[sender] = [];
+    }
+    acc[sender].push(message);
+    return acc;
+  }, {});
+
+  const conversations = Object.entries(groupedMessages).map(([sender, msgs]) => {
+    const sortedMsgs = msgs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const latestMessage = sortedMsgs[0];
+    return {
+      sender,
+      message_count: msgs.length,
+      latest_message: latestMessage,
+      ...latestMessage
+    };
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
   if (loading) {
     return (
-      <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen">
-          <Sidebar />
-        </div>
-        <div className="flex-1 flex items-center justify-center ml-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading messages...</p>
         </div>
       </div>
     );
@@ -191,17 +205,10 @@ export default function MessagesPage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen">
-          <Sidebar />
-        </div>
-        <div className="flex-1 flex items-center justify-center ml-64">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Please log in to view messages</p>
-            <Link href="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
-              Go to Login
-            </Link>
-          </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Please log in to view messages</p>
+          <a href="/" className="text-purple-600 hover:underline">Go to login</a>
         </div>
       </div>
     );
@@ -209,36 +216,28 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
+      {/* Fixed Sidebar */}
       <div className="fixed left-0 top-0 h-screen z-10">
         <Sidebar />
       </div>
       
+      {/* Main Content Area */}
       <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full">
       
       {selectedMessage ? (
         // Chat View
         <div className="flex flex-col h-screen overflow-x-hidden">
-          {/* Chat Header - Sticky */}
+          {/* Chat Header - STICKY */}
           <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 flex-shrink-0">
-            <button
+            <button 
               onClick={() => setSelectedMessage(null)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
+              ← Back
             </button>
-            <div className="flex items-center gap-3">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
-                alt="eBay"
-                className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200"
-              />
-              <div>
-                <h2 className="font-semibold text-gray-900">{selectedMessage.sender}</h2>
-                <p className="text-sm text-gray-500">{selectedMessage.subject}</p>
-              </div>
+            <div className="flex-1">
+              <h2 className="font-semibold text-gray-900">{selectedMessage.sender}</h2>
+              <p className="text-sm text-gray-600">{selectedMessage.subject}</p>
             </div>
           </div>
 
@@ -256,7 +255,7 @@ export default function MessagesPage() {
                   />
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words overflow-wrap-anywhere ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
-                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
+                      {msg.subject && !isOutgoing && <p className="font-semibold text-sm mb-2 break-words">{msg.subject}</p>}
                       <p className={`text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>
                         {msg.body || msg.subject}
                       </p>
@@ -269,28 +268,29 @@ export default function MessagesPage() {
                 </div>
               );
             })}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Reply Input - Sticky */}
+          {/* Reply Input - STICKY */}
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
             <div className="flex gap-4 max-w-full overflow-x-hidden">
               <textarea
-                placeholder="Type your reply..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Type your reply..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                rows="3"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendReply();
                   }
                 }}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                rows={3}
               />
-              <button 
+              <button
                 onClick={sendReply}
                 disabled={!replyText.trim() || isSending}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium h-fit"
               >
                 {isSending ? 'Sending...' : 'Send'}
               </button>
@@ -299,12 +299,12 @@ export default function MessagesPage() {
         </div>
       ) : (
         // Messages List View
-        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-          {/* Top header bar with Messages title, searchbar, and auto-reply */}
-          <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
+        <div className="flex flex-col h-screen overflow-hidden">
+          {/* Top header bar with Messages title, searchbar, and auto-reply - STICKY */}
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
             <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
             
-            <div className="flex-1 min-w-0"></div>
+            <div className="flex-1"></div>
 
             <div className="max-w-md w-96 flex-shrink min-w-0">
               <div className="relative">
@@ -322,144 +322,147 @@ export default function MessagesPage() {
             </div>
 
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 whitespace-nowrap">
-              Auto-reply
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
+              Auto-reply
             </button>
           </div>
 
           <div className="flex flex-1 min-w-0 overflow-hidden">
             {/* Messages Folders Sidebar */}
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-              <nav className="flex-1 px-4 py-4 space-y-1">
+              <div className="p-4">
+                <button
+                  onClick={syncMessages}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Sync Messages
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto">
                 {folders.map(folder => (
                   <button
                     key={folder.id}
                     onClick={() => setCurrentFilter(folder.id)}
-                    className={`w-full text-left px-4 py-2 rounded-lg font-semibold flex items-center justify-between ${
+                    className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
                       currentFilter === folder.id
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-purple-50 text-purple-600 border-r-2 border-purple-600'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span>{folder.label}</span>
-                    <span className="text-sm text-gray-400">{folder.count}</span>
+                    <span className="font-medium">{folder.label}</span>
+                    {folder.count > 0 && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        currentFilter === folder.id
+                          ? 'bg-purple-100 text-purple-600'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {folder.count}
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-              {/* Action buttons */}
-              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedMessages(filteredMessages.map(m => m.message_id));
-                    } else {
-                      setSelectedMessages([]);
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {/* Action buttons - STICKY */}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
+                <button 
+                  onClick={() => {
+                    if (selectedMessages.length > 0) {
+                      console.log('Delete messages:', selectedMessages);
                     }
                   }}
-                />
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0 whitespace-nowrap"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                   Trash
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+                <button 
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0 whitespace-nowrap"
+                >
                   Mark Unread
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-                  </svg>
-                  Mark Read
+                <button 
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0 whitespace-nowrap"
+                >
+                  Report Spam
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                  </svg>
-                  Report
-                </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                <button 
+                  disabled={selectedMessages.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0 whitespace-nowrap"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                   </svg>
                   Archive
-                </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  Label
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
                 </button>
               </div>
 
               {/* Messages list */}
               <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 {filteredMessages.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <p className="text-gray-500">No messages found</p>
+                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                    <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p className="text-lg font-medium">No messages</p>
+                    <p className="text-sm">Messages from your eBay buyers will appear here</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {filteredMessages.map((message) => (
+                    {conversations.map((conversation) => (
                       <div
-                        key={message.message_id}
+                        key={conversation.message_id}
                         className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer max-w-full ${
-                          !message.read ? 'bg-purple-50' : ''
+                          !conversation.read ? 'bg-purple-50' : ''
                         }`}
-                        onClick={() => openConversation(message)}
+                        onClick={() => openConversation(conversation.latest_message)}
                       >
                         <input
                           type="checkbox"
-                          checked={selectedMessages.includes(message.message_id)}
+                          checked={selectedMessages.includes(conversation.message_id)}
                           onChange={(e) => {
                             e.stopPropagation();
-                            toggleSelectMessage(message.message_id);
+                            toggleSelectMessage(conversation.message_id);
                           }}
-                          className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
+                          className="mt-1 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0 cursor-pointer"
                         />
-                        
-                        <div className="flex-shrink-0">
-                          <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
-                            alt="eBay"
-                            className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200"
-                          />
-                        </div>
-
                         <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-center justify-between mb-1 gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-shrink">
-                              <p className="font-semibold text-gray-900 text-sm truncate">{message.sender || 'eBay User'}</p>
-                              {message.message_count && message.message_count > 1 && (
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
-                                  {message.message_count}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
-                              {new Date(message.created_at).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                              })}
-                            </span>
+                          <div className="flex items-center gap-3 mb-2">
+                            <img
+                              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png"
+                              alt="eBay"
+                              className="w-6 h-auto"
+                            />
                           </div>
-                          <p className="text-sm text-gray-600 truncate overflow-hidden">{message.subject || 'No subject'}</p>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-gray-900 text-sm">{conversation.sender || 'eBay User'}</p>
+                                {conversation.message_count > 1 && (
+                                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
+                                    {conversation.message_count}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-gray-500">{new Date(conversation.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 truncate">{conversation.subject || 'No subject'}</p>
+                          </div>
                         </div>
                       </div>
                     ))}
