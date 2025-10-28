@@ -312,7 +312,7 @@ export default function MessagesPage() {
         </div>
       ) : (
         // Messages List View
-        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+        <div className="flex flex-col h-screen overflow-hidden">
           {/* Top header bar with Messages title, searchbar, and auto-reply - STICKY */}
           <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-6 flex-shrink-0 max-w-full overflow-x-hidden">
             <h1 className="text-xl font-bold text-gray-900 flex-shrink-0">Messages</h1>
@@ -364,9 +364,9 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-              {/* Action buttons - STICKY */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {/* Action buttons - NOT SCROLLING */}
+              <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide max-w-full">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
