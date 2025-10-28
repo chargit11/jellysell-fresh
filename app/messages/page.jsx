@@ -136,7 +136,7 @@ export default function MessagesPage() {
     );
   };
 
-  const openConversation = (message) => {
+  const openConversation = async (message) => {
     // Load all messages to/from this sender (both incoming and outgoing)
     const allMessagesInConversation = messages
       .filter(m => m.sender === message.sender)
@@ -144,6 +144,34 @@ export default function MessagesPage() {
     
     setConversationMessages(allMessagesInConversation);
     setSelectedMessage(message);
+
+    // Mark all messages in this conversation as read
+    const unreadMessageIds = allMessagesInConversation
+      .filter(m => !m.read)
+      .map(m => m.message_id);
+
+    if (unreadMessageIds.length > 0) {
+      try {
+        // Update in database
+        const { error } = await supabase
+          .from('ebay_messages')
+          .update({ read: true })
+          .in('message_id', unreadMessageIds);
+
+        if (error) throw error;
+
+        // Update local state
+        setMessages(prev => prev.map(msg => 
+          unreadMessageIds.includes(msg.message_id) 
+            ? { ...msg, read: true }
+            : msg
+        ));
+
+        console.log('Marked messages as read:', unreadMessageIds.length);
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+      }
+    }
   };
 
   const sendReply = async () => {
