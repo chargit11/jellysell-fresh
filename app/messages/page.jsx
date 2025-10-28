@@ -83,20 +83,25 @@ export default function MessagesPage() {
   const filterMessages = () => {
     let filtered = [...messages];
 
-    // Filter out deleted messages by default (except when viewing trash)
-    if (currentFilter !== 'trash') {
-      filtered = filtered.filter(m => !m.deleted);
-    }
+    console.log('Filtering messages. Total:', messages.length, 'Deleted:', messages.filter(m => m.deleted).length);
 
-    if (currentFilter === 'unread') {
-      filtered = filtered.filter(m => !m.read && !m.deleted);
+    // Apply folder-specific filters first
+    if (currentFilter === 'trash') {
+      // Only show deleted messages
+      filtered = filtered.filter(m => m.deleted === true);
+    } else if (currentFilter === 'unread') {
+      // Show unread, non-deleted messages
+      filtered = filtered.filter(m => !m.read && m.deleted !== true);
     } else if (currentFilter === 'sent') {
       filtered = [];
     } else if (currentFilter === 'spam') {
       filtered = [];
-    } else if (currentFilter === 'trash') {
-      filtered = filtered.filter(m => m.deleted);
+    } else {
+      // inbox, all - show non-deleted messages
+      filtered = filtered.filter(m => m.deleted !== true);
     }
+
+    console.log('After filter (currentFilter=' + currentFilter + '):', filtered.length);
 
     if (searchQuery.trim()) {
       filtered = filtered.filter(m =>
@@ -118,7 +123,9 @@ export default function MessagesPage() {
       }
     });
 
-    setFilteredMessages(Object.values(groupedBySender));
+    const grouped = Object.values(groupedBySender);
+    console.log('After grouping:', grouped.length, 'conversations');
+    setFilteredMessages(grouped);
   };
 
   const toggleSelectMessage = (messageId) => {
@@ -187,6 +194,8 @@ export default function MessagesPage() {
   const handleTrash = async () => {
     if (selectedMessages.length === 0) return;
 
+    console.log('Trashing messages:', selectedMessages);
+
     try {
       // Update messages in database to mark as deleted
       const { error } = await supabase
@@ -196,12 +205,17 @@ export default function MessagesPage() {
 
       if (error) throw error;
 
+      console.log('Database updated, now updating local state');
+
       // Update local state
-      setMessages(prev => prev.map(msg => 
+      const updatedMessages = messages.map(msg => 
         selectedMessages.includes(msg.message_id) 
           ? { ...msg, deleted: true }
           : msg
-      ));
+      );
+      
+      setMessages(updatedMessages);
+      console.log('Messages after trash:', updatedMessages.filter(m => m.deleted).length, 'deleted');
 
       // Clear selection
       setSelectedMessages([]);
@@ -645,7 +659,7 @@ export default function MessagesPage() {
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center justify-between mb-1 gap-2">
                             <div className="flex items-center gap-2 min-w-0 flex-shrink">
-                              <p className="font-semibold text-gray-900 text-sm truncate">{message.sender || 'eBay User'}</p>
+                              <p className={`text-gray-900 text-sm truncate ${!message.read ? 'font-bold' : 'font-semibold'}`}>{message.sender || 'eBay User'}</p>
                               {message.message_count && message.message_count > 1 && (
                                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
                                   {message.message_count}
@@ -660,7 +674,7 @@ export default function MessagesPage() {
                               })}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 truncate overflow-hidden">{message.subject || 'No subject'}</p>
+                          <p className={`text-sm text-gray-600 truncate overflow-hidden ${!message.read ? 'font-bold' : ''}`}>{message.subject || 'No subject'}</p>
                         </div>
                       </div>
                     ))}
