@@ -3,10 +3,9 @@ import React from 'react';
 // --- CONFIGURATION ---
 // REPLACE ALL PLACEHOLDERS IN CAPITAL LETTERS BELOW
 const CONFIG = {
-  COMPANY_NAME: "{YOUR COMPANY LEGAL NAME}", 
+  COMPANY_NAME: "HAN-E LLC", 
   WEBSITE_NAME: "Jellysell", // The public-facing site name
-  CONTACT_EMAIL: "{YOUR DEDICATED PRIVACY EMAIL}", 
-  MAILING_ADDRESS: "{YOUR COMPANY MAILING ADDRESS}",
+  CONTACT_EMAIL: "support@jellysell.com", 
   EFFECTIVE_DATE: "October 30, 2025",
   PRIMARY_COLOR_BG: "bg-indigo-50", // Light background for contrast
   PRIMARY_COLOR_TEXT: "text-indigo-700", // Primary color for headings
