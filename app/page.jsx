@@ -286,7 +286,7 @@ export default function Home() {
             <button onClick={() => setShowSignUpModal(true)} className="px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 shadow-lg">Start Free Trial</button>
             <button className="px-8 py-4 border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400">Watch Demo</button>
           </div>
-          <p className="mt-6 text-sm text-gray-500">No credit card required - Free 14-day trial</p>
+          <p className="mt-6 text-sm text-gray-500">Cancel anytime.</p>
         </div>
       </section>
       <section className="py-12 bg-gray-50 border-y border-gray-200">
@@ -411,7 +411,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Simplify Your Selling?</h2>
           <p className="text-xl text-purple-100 mb-10">Join thousands of sellers who trust JellySell® to manage their multi-platform businesses.</p>
           <button onClick={() => setShowSignUpModal(true)} className="inline-block px-10 py-4 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-50 shadow-lg">Start Your Free Trial</button>
-          <p className="mt-6 text-sm text-purple-100">14 days free • No credit card required • Cancel anytime</p>
+          <p className="mt-6 text-sm text-purple-100">Cancel anytime</p>
         </div>
       </section>
       <footer className="bg-slate-900 text-gray-400 py-12 px-6">
