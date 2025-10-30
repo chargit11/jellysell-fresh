@@ -443,9 +443,7 @@ export default function Home() {
               <div className="space-y-3">
                 <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
                 import Link from 'next/link';
-              <Link href="/privacy-policy" className="block text-gray-400 hover:text-white text-sm">
-                Privacy
-                </Link>
+                <Link href="/privacy-policy" className="block text-gray-400 hover:text-white text-sm">Privacy</Link>
               </div>
             </div>
           </div>
