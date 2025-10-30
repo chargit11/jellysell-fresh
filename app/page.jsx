@@ -442,7 +442,10 @@ export default function Home() {
               <h3 className="text-white font-semibold mb-4">Company</h3>
               <div className="space-y-3">
                 <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
+                import Link from 'next/link';
+              <Link href="/privacy-policy" className="block text-gray-400 hover:text-white text-sm">
+                Privacy
+                </Link>
               </div>
             </div>
           </div>
