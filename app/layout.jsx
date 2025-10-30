@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'JellySell',
-  description: 'Your eBay management platform',
+  description: 'The fastest way to sell something.',
 }
 
 export default function RootLayout({ children }) {
