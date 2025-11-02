@@ -439,13 +439,12 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <div className="space-y-3">
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
-                import Link from 'next/link';
-                <Link href="/privacy-policy" className="block text-gray-400 hover:text-white text-sm">Privacy</Link>
-              </div>
-            </div>
+  <h3 className="text-white font-semibold mb-4">Company</h3>
+  <div className="space-y-3">
+    <Link href="/about" className="block text-gray-400 hover:text-white text-sm">About</Link>
+    <Link href="/privacy" className="block text-gray-400 hover:text-white text-sm">Privacy</Link>
+  </div>
+</div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex justify-center items-center relative">
             <p className="text-sm text-gray-400">© 2025 HAN-E LLC / JellySell®</p>
