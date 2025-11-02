@@ -388,24 +388,6 @@ export default function MessagesPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
-        <div className="fixed left-0 top-0 h-screen">
-          <Sidebar />
-        </div>
-        <div className="flex-1 flex items-center justify-center ml-64">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Please log in to view messages</p>
-            <Link href="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
-              Go to Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
       <div className="fixed left-0 top-0 h-screen z-10">
