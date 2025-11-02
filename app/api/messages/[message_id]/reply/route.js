@@ -1,15 +1,14 @@
 // app/api/messages/[message_id]/reply/route.js
-// POST endpoint to send reply via eBay and save to database
-
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 export async function POST(request, { params }) {
   try {
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
     const { message_id } = params;
     const { reply_text, user_id, item_id, recipient_id } = await request.json();
 
@@ -82,7 +81,7 @@ export async function POST(request, { params }) {
       .insert({
         user_id: user_id,
         message_id: `${message_id}-reply-${Date.now()}`,
-        sender: 'YOU', // Will be replaced with actual username
+        sender: 'YOU',
         recipient: recipient_id,
         subject: `Re: `,
         body: reply_text,
@@ -95,7 +94,6 @@ export async function POST(request, { params }) {
 
     if (insertError) {
       console.error('Failed to save sent message:', insertError);
-      // Don't fail the request - message was sent successfully
     }
 
     return Response.json({
