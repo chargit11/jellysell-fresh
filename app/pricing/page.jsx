@@ -30,7 +30,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="fixed top-0 w-full bg-white border-b border-gray-200 z-50">
-        <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
@@ -251,8 +251,8 @@ export default function Pricing() {
             <div>
               <h3 className="text-white font-semibold mb-4">Company</h3>
               <div className="space-y-3">
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">About</a>
-                <a href="#" className="block text-gray-400 hover:text-white text-sm">Privacy</a>
+                <Link href="/about" className="block text-gray-400 hover:text-white text-sm">About</Link>
+                <Link href="/privacy" className="block text-gray-400 hover:text-white text-sm">Privacy</Link>
               </div>
             </div>
           </div>
