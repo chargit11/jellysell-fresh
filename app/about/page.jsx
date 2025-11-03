@@ -10,12 +10,12 @@ export default function About() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
-        <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </Link>
-          <div className="flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8">
             <a href="/#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
           </div>
@@ -23,10 +23,13 @@ export default function About() {
       </header>
 
       {/* Content */}
-      <div className="pt-24 pb-16 px-6">
+      <div className="pt-32 pb-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">About JellySell</h1>
+          <p className="text-xl text-gray-600 mb-16 max-w-2xl mx-auto">Learn more about our mission to simplify multi-platform selling</p>
+        </div>
+        
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-12">About JellySell</h1>
-          
           <div className="space-y-12 text-gray-700">
             <section>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Our Mission</h2>
