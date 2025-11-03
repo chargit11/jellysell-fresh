@@ -178,6 +178,18 @@ export default function MessagesPage() {
     setIsSending(true);
     
     try {
+      // Get user_id from localStorage
+      const userId = localStorage.getItem('user_id');
+      
+      if (!userId) {
+        console.error('No user_id found in localStorage');
+        alert('User ID not found. Please log in again.');
+        setIsSending(false);
+        return;
+      }
+
+      console.log('User ID from localStorage:', userId);
+
       // Send message via eBay API
       const response = await fetch('/api/messages/send', {
         method: 'POST',
@@ -188,11 +200,14 @@ export default function MessagesPage() {
           recipient: selectedMessage.sender,
           body: replyText,
           itemId: selectedMessage.item_id,
-          user_id: user.id
+          user_id: userId
         })
       });
 
       const data = await response.json();
+      
+      console.log('API Response:', data);
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         console.error('Failed to send message:', data);
@@ -208,6 +223,7 @@ export default function MessagesPage() {
       console.log('Message sent successfully via eBay!');
     } catch (error) {
       console.error('Error sending message:', error);
+      console.error('Error details:', error.message);
       alert('Failed to send message. Check console for details.');
     } finally {
       setIsSending(false);
