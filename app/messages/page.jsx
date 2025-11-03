@@ -272,7 +272,7 @@ export default function MessagesPage() {
       );
       
       setMessages(updatedMessages);
-      console.log('Messages after trash:', updatedMessages.filter(m => m.deleted).length, 'deleted');
+      console.log('Messages after trash:', updatedMessages.filter(m => m.deleted === true).length, 'deleted');
 
       // Clear selection
       setSelectedMessages([]);
@@ -396,12 +396,12 @@ export default function MessagesPage() {
   };
 
   const folders = [
-    { id: 'inbox', label: 'Inbox', count: messages.filter(m => !m.deleted).length },
+    { id: 'inbox', label: 'Inbox', count: messages.filter(m => m.deleted !== true).length },
     { id: 'sent', label: 'Sent', count: 0 },
-    { id: 'all', label: 'All', count: messages.filter(m => !m.deleted).length },
-    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read && !m.deleted).length },
+    { id: 'all', label: 'All', count: messages.filter(m => m.deleted !== true).length },
+    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read && m.deleted !== true).length },
     { id: 'spam', label: 'Spam', count: 0 },
-    { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted).length },
+    { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true).length },
   ];
 
   if (loading) {
