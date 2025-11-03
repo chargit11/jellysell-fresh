@@ -170,16 +170,24 @@ export default function MessagesPage() {
   };
 
   const sendReply = async () => {
-    if (!replyText.trim() || isSending) return;
-    
-    console.log('Sending reply to:', selectedMessage.sender);
+    console.log('=== SEND REPLY CLICKED ===');
     console.log('Reply text:', replyText);
+    console.log('Is sending:', isSending);
+    
+    if (!replyText.trim() || isSending) {
+      console.log('Aborting: empty text or already sending');
+      return;
+    }
+    
+    console.log('Selected message:', selectedMessage);
+    console.log('Sending reply to:', selectedMessage.sender);
     
     setIsSending(true);
     
     try {
       // Get user_id from localStorage
       const userId = localStorage.getItem('user_id');
+      console.log('User ID from localStorage:', userId);
       
       if (!userId) {
         console.error('No user_id found in localStorage');
@@ -188,7 +196,15 @@ export default function MessagesPage() {
         return;
       }
 
-      console.log('User ID from localStorage:', userId);
+      const requestBody = {
+        recipient: selectedMessage.sender,
+        body: replyText,
+        itemId: selectedMessage.item_id,
+        user_id: userId
+      };
+      
+      console.log('Request body:', requestBody);
+      console.log('Making fetch request to /api/messages/send...');
 
       // Send message via eBay API
       const response = await fetch('/api/messages/send', {
@@ -196,36 +212,38 @@ export default function MessagesPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          recipient: selectedMessage.sender,
-          body: replyText,
-          itemId: selectedMessage.item_id,
-          user_id: userId
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      const data = await response.json();
+      console.log('Response received. Status:', response.status);
+      console.log('Response OK:', response.ok);
       
-      console.log('API Response:', data);
-      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
-        console.error('Failed to send message:', data);
+        console.error('Failed to send message. Status:', response.status);
+        console.error('Error data:', data);
         alert(`Failed to send message: ${data.error || 'Unknown error'}`);
         return;
       }
 
+      console.log('Message sent successfully!');
+      
       // Add to local state immediately
       setMessages(prev => [...prev, data.data]);
       setConversationMessages(prev => [...prev, data.data]);
       
       setReplyText('');
-      console.log('Message sent successfully via eBay!');
+      alert('Message sent successfully!');
     } catch (error) {
-      console.error('Error sending message:', error);
-      console.error('Error details:', error.message);
-      alert('Failed to send message. Check console for details.');
+      console.error('=== CATCH BLOCK ERROR ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      alert(`Failed to send message: ${error.message}`);
     } finally {
+      console.log('Setting isSending to false');
       setIsSending(false);
     }
   };
@@ -481,9 +499,14 @@ export default function MessagesPage() {
                 rows={3}
               />
               <button 
-                onClick={sendReply}
-                disabled={!replyText.trim() || isSending}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  console.log('SEND BUTTON CLICKED!');
+                  console.log('Reply text:', replyText);
+                  console.log('Reply text length:', replyText.length);
+                  console.log('Is sending:', isSending);
+                  sendReply();
+                }}
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit"
               >
                 {isSending ? 'Sending...' : 'Send'}
               </button>
