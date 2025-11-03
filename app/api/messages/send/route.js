@@ -499,7 +499,12 @@ export default function MessagesPage() {
                 rows={3}
               />
               <button 
-                onClick={sendReply}
+                onClick={() => {
+                  console.log('SEND BUTTON CLICKED!');
+                  console.log('Reply text:', replyText);
+                  console.log('Is disabled:', !replyText.trim() || isSending);
+                  sendReply();
+                }}
                 disabled={!replyText.trim() || isSending}
                 className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:opacity-50 disabled:cursor-not-allowed"
               >
