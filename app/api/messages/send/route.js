@@ -85,6 +85,7 @@ export async function POST(request) {
         body: messageBody,
         direction: 'outgoing',
         read: true,
+        deleted: false,
         created_at: new Date().toISOString(),
         platform: 'ebay',
         item_id: itemId
