@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -120,7 +123,6 @@ export async function POST(request) {
   }
 }
 
-// Add OPTIONS handler for CORS
 export async function OPTIONS(request) {
   return new NextResponse(null, {
     status: 200,
