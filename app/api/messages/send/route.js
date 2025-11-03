@@ -7,29 +7,37 @@ const supabase = createClient(
 );
 
 export async function POST(request) {
+  console.log('=== MESSAGE SEND API CALLED ===');
+  
   try {
-    const { recipient, body, itemId, user_id } = await request.json();
-
+    const body = await request.json();
+    console.log('Request body:', body);
+    
+    const { recipient, body: messageBody, itemId, user_id } = body;
+    
     console.log('Sending message to eBay:', { recipient, itemId, user_id });
-
-    if (!user_id || !recipient || !body) {
+    
+    if (!user_id || !recipient || !messageBody) {
+      console.error('Missing fields:', { user_id, recipient, messageBody });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-
+    
     // Get user's eBay access token from database
+    console.log('Fetching eBay token for user_id:', user_id);
     const { data: tokenData, error: tokenError } = await supabase
       .from('user_tokens')
       .select('ebay_access_token')
       .eq('user_id', user_id)
       .single();
-
+    
     if (tokenError || !tokenData?.ebay_access_token) {
       console.error('No eBay token found:', tokenError);
       return NextResponse.json({ error: 'eBay account not connected' }, { status: 401 });
     }
-
+    
     const accessToken = tokenData.ebay_access_token;
-
+    console.log('Got eBay access token');
+    
     // Send message via eBay Trading API
     const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
 <AddMemberMessageAAQToPartnerRequest xmlns="urn:ebay:apis:eBLBaseComponents">
@@ -38,11 +46,12 @@ export async function POST(request) {
   </RequesterCredentials>
   <ItemID>${itemId}</ItemID>
   <MemberMessage>
-    <Body>${body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Body>
+    <Body>${messageBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Body>
     <RecipientID>${recipient}</RecipientID>
   </MemberMessage>
 </AddMemberMessageAAQToPartnerRequest>`;
-
+    
+    console.log('Sending request to eBay API...');
     const response = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
       headers: {
@@ -56,34 +65,39 @@ export async function POST(request) {
       },
       body: xmlRequest
     });
-
+    
     const xmlText = await response.text();
     console.log('eBay API response:', xmlText);
-
+    
     // Check if successful
     if (xmlText.includes('<Ack>Success</Ack>') || xmlText.includes('<Ack>Warning</Ack>')) {
+      console.log('Message sent successfully to eBay');
+      
       // Save sent message to database
       const newMessage = {
         user_id: user_id,
         message_id: `sent_${Date.now()}_${Math.random()}`,
         sender: recipient,
         subject: '',
-        body: body,
+        body: messageBody,
         direction: 'outgoing',
         read: true,
         created_at: new Date().toISOString(),
         platform: 'ebay',
         item_id: itemId
       };
-
+      
+      console.log('Saving message to database...');
       const { error: dbError } = await supabase
         .from('ebay_messages')
         .insert([newMessage]);
-
+      
       if (dbError) {
         console.error('Error saving message to database:', dbError);
+      } else {
+        console.log('Message saved to database');
       }
-
+      
       return NextResponse.json({
         success: true,
         message: 'Message sent successfully',
@@ -96,12 +110,22 @@ export async function POST(request) {
         { status: 500 }
       );
     }
-
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error('Error in send message API:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
       { error: 'Failed to send message', message: error.message },
       { status: 500 }
     );
   }
+}
+
+// Add OPTIONS handler for CORS
+export async function OPTIONS(request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Allow': 'POST, OPTIONS'
+    }
+  });
 }
