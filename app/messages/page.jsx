@@ -30,13 +30,8 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchUser();
+    fetchMessages(); // Fetch messages immediately, don't wait for user
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchMessages();
-    }
-  }, [user]);
 
   useEffect(() => {
     filterMessages();
