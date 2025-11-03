@@ -7,12 +7,12 @@ export default function Privacy() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50">
-        <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src="https://i.ibb.co/cKc6rqyy/new-jellysell-logo.webp" alt="JellySell" className="w-8 h-8" />
             <span className="text-xl font-bold text-gray-900">jellysell</span>
           </Link>
-          <div className="flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8">
             <a href="/#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
           </div>
@@ -20,11 +20,13 @@ export default function Privacy() {
       </header>
 
       {/* Content */}
-      <div className="pt-24 pb-16 px-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="pt-32 pb-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-          <p className="text-gray-500 mb-12">Last updated: November 2, 2025</p>
-          
+          <p className="text-gray-500 mb-16">Last updated: November 2, 2025</p>
+        </div>
+        
+        <div className="max-w-4xl mx-auto">
           <div className="space-y-10 text-gray-700">
             
             <section>
