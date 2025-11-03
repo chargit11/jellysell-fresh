@@ -78,7 +78,7 @@ export default function MessagesPage() {
   const filterMessages = () => {
     let filtered = [...messages];
 
-    console.log('Filtering messages. Total:', messages.length, 'Deleted:', messages.filter(m => m.deleted).length);
+    console.log('Filtering messages. Total:', messages.length, 'Deleted:', messages.filter(m => m.deleted === true).length);
 
     // Apply folder-specific filters first
     if (currentFilter === 'trash') {
@@ -92,7 +92,7 @@ export default function MessagesPage() {
     } else if (currentFilter === 'spam') {
       filtered = [];
     } else {
-      // inbox, all - show non-deleted messages
+      // inbox, all - show non-deleted messages (treat undefined as not deleted)
       filtered = filtered.filter(m => m.deleted !== true);
     }
 
