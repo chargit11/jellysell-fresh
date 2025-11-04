@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 export async function POST(request) {
-  console.log('=== MESSAGE SEND API CALLED ===');
+  console.log('=== SEND EBAY MESSAGE API CALLED ===');
   
   try {
     const body = await request.json();
