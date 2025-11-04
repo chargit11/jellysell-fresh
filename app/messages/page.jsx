@@ -207,7 +207,7 @@ export default function MessagesPage() {
       console.log('Making fetch request to /api/messages/send...');
 
       // Send message via eBay API
-      const response = await fetch('/api/messages/send', {
+      const response = await fetch('/api/send-ebay-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
