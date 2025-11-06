@@ -29,16 +29,16 @@ export async function POST(request) {
     console.log('Fetching eBay token for user_id:', user_id);
     const { data: tokenData, error: tokenError } = await supabase
       .from('user_tokens')
-      .select('ebay_access_token')
+      .select('access_token')
       .eq('user_id', user_id)
       .single();
     
-    if (tokenError || !tokenData?.ebay_access_token) {
+    if (tokenError || !tokenData?.access_token) {
       console.error('No eBay token found:', tokenError);
       return NextResponse.json({ error: 'eBay account not connected' }, { status: 401 });
     }
     
-    const accessToken = tokenData.ebay_access_token;
+    const accessToken = tokenData.access_token;
     console.log('Got eBay access token');
     
     // Send message via eBay Trading API
