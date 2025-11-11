@@ -53,9 +53,23 @@ export default function Connections() {
     }
 
     try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        alert('Please login first');
+        window.location.href = '/login';
+        return;
+      }
+
       const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
       const redirectUri = encodeURIComponent('https://jellysell.com/api/ebay/callback');
-      const state = Math.random().toString(36).substring(7);
+      
+      // Pass user_id in state so callback knows who to save tokens for
+      const state = JSON.stringify({ 
+        user_id, 
+        random: Math.random().toString(36).substring(7) 
+      });
+      const encodedState = encodeURIComponent(state);
+      
       const scopes = encodeURIComponent([
         'https://api.ebay.com/oauth/api_scope',
         'https://api.ebay.com/oauth/api_scope/sell.marketing',
@@ -64,10 +78,8 @@ export default function Connections() {
         'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
         'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly'
       ].join(' '));
-
-      localStorage.setItem('ebay_oauth_state', state);
       
-      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}&scope=${scopes}`;
+      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${encodedState}&scope=${scopes}`;
       
       window.location.href = authUrl;
     } catch (error) {
