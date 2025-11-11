@@ -11,10 +11,27 @@ const EBAY_CLIENT_SECRET = 'PRD-dec8469432c4-0955-420e-89d4-44cc';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const state = searchParams.get('state');
+  const stateParam = searchParams.get('state');
 
   if (!code) {
     return NextResponse.redirect('https://jellysell.com/connections?error=no_code');
+  }
+
+  if (!stateParam) {
+    return NextResponse.redirect('https://jellysell.com/connections?error=no_state');
+  }
+
+  let user_id;
+  try {
+    const state = JSON.parse(decodeURIComponent(stateParam));
+    user_id = state.user_id;
+  } catch (error) {
+    console.error('Failed to parse state:', error);
+    return NextResponse.redirect('https://jellysell.com/connections?error=invalid_state');
+  }
+
+  if (!user_id) {
+    return NextResponse.redirect('https://jellysell.com/connections?error=no_user_id');
   }
 
   try {
@@ -39,12 +56,28 @@ export async function GET(request) {
       return NextResponse.redirect('https://jellysell.com/connections?error=token_failed');
     }
 
-    // Get user_id from URL or session (you'll need to pass this)
-    // For now, we'll get it from the referring page or you need to add it to state
-    
-    // TODO: You need to pass user_id in the OAuth state parameter
-    // For now, just redirect back and tell user to try again
-    
+    // Calculate expiration time
+    const expires_at = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+
+    // Save tokens to Supabase
+    const { error: upsertError } = await supabase
+      .from('ebay_tokens')
+      .upsert({
+        user_id: user_id,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_at: expires_at,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (upsertError) {
+      console.error('Failed to save tokens:', upsertError);
+      return NextResponse.redirect('https://jellysell.com/connections?error=save_failed');
+    }
+
+    console.log('eBay tokens saved successfully for user:', user_id);
     return NextResponse.redirect('https://jellysell.com/connections?success=true');
 
   } catch (error) {
