@@ -54,7 +54,7 @@ export default function Connections() {
 
     try {
       const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
-      const redirectUri = encodeURIComponent('https://jellysell.com/oauth/ebay');
+      const redirectUri = encodeURIComponent('https://jellysell.com/api/ebay/callback');
       const state = Math.random().toString(36).substring(7);
       const scopes = encodeURIComponent([
         'https://api.ebay.com/oauth/api_scope',
