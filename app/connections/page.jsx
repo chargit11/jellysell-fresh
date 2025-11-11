@@ -1,9 +1,11 @@
 // app/connections/page.jsx
 'use client';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
 export default function Connections() {
+  const searchParams = useSearchParams();
   const [connections, setConnections] = useState({
     ebay: false,
     etsy: false,
@@ -12,10 +14,21 @@ export default function Connections() {
     mercari: false
   });
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
+    // Check for success/error messages from OAuth callback
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'ebay_connected') {
+      setMessage({ type: 'success', text: 'eBay connected successfully!' });
+    } else if (error) {
+      setMessage({ type: 'error', text: `Connection failed: ${error}` });
+    }
+
     checkConnections();
-  }, []);
+  }, [searchParams]);
 
   const checkConnections = async () => {
     try {
@@ -110,13 +123,13 @@ export default function Connections() {
 
       if (response.ok && data.success) {
         setConnections(prev => ({ ...prev, [platform]: false }));
-        alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!`);
+        setMessage({ type: 'success', text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!` });
       } else {
-        alert(`Failed to disconnect ${platform}: ${data.error || 'Unknown error'}`);
+        setMessage({ type: 'error', text: `Failed to disconnect ${platform}: ${data.error || 'Unknown error'}` });
       }
     } catch (error) {
       console.error('Error disconnecting platform:', error);
-      alert('Error disconnecting platform. Please try again.');
+      setMessage({ type: 'error', text: 'Error disconnecting platform. Please try again.' });
     }
   };
 
@@ -171,8 +184,21 @@ export default function Connections() {
         </div>
 
         <div className="flex-1 p-4 overflow-hidden">
+          {message && (
+            <div className={`mb-3 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{message.text}</span>
+                <button onClick={() => setMessage(null)} className="text-gray-500 hover:text-gray-700">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mb-3">
-            <h2 className="text-xl font-bold text-gray-900mb-1">Platform Connections</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Platform Connections</h2>
             <p className="text-gray-600 text-xs">Connect your shop to multiple marketplaces</p>
           </div>
 
