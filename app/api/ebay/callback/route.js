@@ -20,3 +20,35 @@ export async function GET(request) {
   try {
     // Exchange code for access token
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64')}`
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: 'https://jellysell.com/api/ebay/callback'
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      console.error('Token exchange failed:', tokenData);
+      return NextResponse.redirect('https://jellysell.com/connections?error=token_failed');
+    }
+
+    // Get user_id from URL or session (you'll need to pass this)
+    // For now, we'll get it from the referring page or you need to add it to state
+    
+    // TODO: You need to pass user_id in the OAuth state parameter
+    // For now, just redirect back and tell user to try again
+    
+    return NextResponse.redirect('https://jellysell.com/connections?success=true');
+
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    return NextResponse.redirect('https://jellysell.com/connections?error=server_error');
+  }
+}
