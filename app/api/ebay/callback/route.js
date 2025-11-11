@@ -1,0 +1,22 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://qvhjmzdavsbauugubfcm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const EBAY_CLIENT_ID = 'Christia-JellySel-PRD-edec84694-300e7c9b';
+const EBAY_CLIENT_SECRET = 'PRD-edec846948f6-da54-4c7c-965b-3e14';
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get('code');
+  const state = searchParams.get('state');
+
+  if (!code) {
+    return NextResponse.redirect('https://jellysell.com/connections?error=no_code');
+  }
+
+  try {
+    // Exchange code for access token
+    const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
