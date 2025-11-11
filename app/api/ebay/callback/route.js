@@ -6,7 +6,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const EBAY_CLIENT_ID = 'Christia-JellySel-PRD-edec84694-300e7c9b';
-const EBAY_CLIENT_SECRET = 'PRD-edec846948f6-da54-4c7c-965b-3e14';
+const EBAY_CLIENT_SECRET = 'PRD-dec8469432c4-0955-420e-89d4-44cc';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
