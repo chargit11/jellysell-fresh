@@ -59,17 +59,20 @@ export async function GET(request) {
 
     const tokenData = await tokenResponse.json();
     
-    // Save tokens to Supabase
+    // Calculate expiry timestamp
+    const expiryDate = new Date(Date.now() + (tokenData.expires_in * 1000));
+    
+    // Save tokens to Supabase user_tokens table
     const { error: upsertError } = await supabase
-      .from('ebay_tokens')
+      .from('user_tokens')
       .upsert({
         user_id: user_id,
+        platform: 'ebay',
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
-        expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
-        updated_at: new Date().toISOString()
+        token_expiry: expiryDate.toISOString()
       }, {
-        onConflict: 'user_id'
+        onConflict: 'user_id,platform'
       });
 
     if (upsertError) {
