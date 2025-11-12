@@ -14,20 +14,19 @@ function ConnectionsContent() {
     mercari: false
   });
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     // Check for success/error messages from OAuth callback
     const success = searchParams.get('success');
     const error = searchParams.get('error');
 
-    if (success === 'ebay_connected') {
-      setMessage({ type: 'success', text: 'eBay connected successfully!' });
-    } else if (error) {
-      setMessage({ type: 'error', text: `Connection failed: ${error}` });
+    if (success === 'ebay_connected' || error) {
+      // Remove URL params and refresh connection status
+      window.history.replaceState({}, '', '/connections');
+      checkConnections();
+    } else {
+      checkConnections();
     }
-
-    checkConnections();
   }, [searchParams]);
 
   const checkConnections = async () => {
@@ -60,8 +59,6 @@ function ConnectionsContent() {
   };
 
   const handleConnect = async (platform) => {
-    console.log('handleConnect called with platform:', platform);
-    
     if (platform !== 'ebay') {
       alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
       return;
@@ -69,7 +66,6 @@ function ConnectionsContent() {
 
     try {
       const user_id = localStorage.getItem('user_id');
-      console.log('user_id from localStorage:', user_id);
       
       if (!user_id) {
         alert('Please login first');
@@ -98,7 +94,6 @@ function ConnectionsContent() {
       
       const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${encodedState}&scope=${scopes}`;
       
-      console.log('Redirecting to authUrl:', authUrl);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Error connecting platform:', error);
@@ -128,13 +123,12 @@ function ConnectionsContent() {
 
       if (response.ok && data.success) {
         setConnections(prev => ({ ...prev, [platform]: false }));
-        setMessage({ type: 'success', text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!` });
       } else {
-        setMessage({ type: 'error', text: `Failed to disconnect ${platform}: ${data.error || 'Unknown error'}` });
+        alert(`Failed to disconnect ${platform}: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error disconnecting platform:', error);
-      setMessage({ type: 'error', text: 'Error disconnecting platform. Please try again.' });
+      alert('Error disconnecting platform. Please try again.');
     }
   };
 
@@ -189,19 +183,6 @@ function ConnectionsContent() {
         </div>
 
         <div className="flex-1 p-4 overflow-hidden">
-          {message && (
-            <div className={`mb-3 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{message.text}</span>
-                <button onClick={() => setMessage(null)} className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="mb-3">
             <h2 className="text-xl font-bold text-gray-900 mb-1">Platform Connections</h2>
             <p className="text-gray-600 text-xs">Connect your shop to multiple marketplaces</p>
