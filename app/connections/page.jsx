@@ -1,10 +1,10 @@
 // app/connections/page.jsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
-export default function Connections() {
+function ConnectionsContent() {
   const searchParams = useSearchParams();
   const [connections, setConnections] = useState({
     ebay: false,
@@ -60,6 +60,8 @@ export default function Connections() {
   };
 
   const handleConnect = async (platform) => {
+    console.log('handleConnect called with platform:', platform);
+    
     if (platform !== 'ebay') {
       alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
       return;
@@ -67,6 +69,8 @@ export default function Connections() {
 
     try {
       const user_id = localStorage.getItem('user_id');
+      console.log('user_id from localStorage:', user_id);
+      
       if (!user_id) {
         alert('Please login first');
         window.location.href = '/login';
@@ -94,6 +98,7 @@ export default function Connections() {
       
       const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${encodedState}&scope=${scopes}`;
       
+      console.log('Redirecting to authUrl:', authUrl);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Error connecting platform:', error);
@@ -278,5 +283,13 @@ export default function Connections() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Connections() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ConnectionsContent />
+    </Suspense>
   );
 }
