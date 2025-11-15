@@ -15,6 +15,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   
+  // Load collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+    if (savedCollapsed === 'true') {
+      setCollapsed(true);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUnreadCount();
     
@@ -49,6 +57,14 @@ export default function Sidebar() {
     }
 
     setUnreadCount(count || 0);
+  };
+
+  const toggleCollapsed = () => {
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    localStorage.setItem('sidebar-collapsed', String(newCollapsed));
+    // Dispatch custom event so other components can react
+    window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: newCollapsed } }));
   };
 
   const navItems = [
@@ -95,7 +111,7 @@ export default function Sidebar() {
           </div>
         )}
         <button 
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggleCollapsed}
           className={`text-gray-400 hover:text-gray-600 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
