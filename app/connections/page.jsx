@@ -24,10 +24,29 @@ function ConnectionsContent() {
       // Remove URL params and refresh connection status
       window.history.replaceState({}, '', '/connections');
       checkConnections();
+      
+      // Trigger Chrome extension to sync data automatically
+      if (success === 'ebay_connected') {
+        triggerExtensionSync();
+      }
     } else {
       checkConnections();
     }
   }, [searchParams]);
+
+  const triggerExtensionSync = async () => {
+    try {
+      // Send message to Chrome extension to sync eBay data
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        await chrome.runtime.sendMessage('eopdegaaaehcnlkeiidkflahpffhmhmd', { 
+          action: 'syncData' 
+        });
+        console.log('✓ Extension sync triggered');
+      }
+    } catch (error) {
+      console.log('Extension not installed or unavailable:', error.message);
+    }
+  };
 
   const checkConnections = async () => {
     try {
