@@ -12,7 +12,6 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when conversation loads
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -21,7 +20,6 @@ export default function MessagesPage() {
     fetchMessages();
   }, []);
 
-  // Auto-scroll when conversation changes
   useEffect(() => {
     if (conversationMessages.length > 0) {
       scrollToBottom();
@@ -40,9 +38,8 @@ export default function MessagesPage() {
       const response = await fetch(`/api/messages?user_id=${userId}`);
       const data = await response.json();
       
-      // Only show incoming messages in the inbox
-      const incomingMessages = data.filter(msg => msg.direction === 'incoming');
-      setMessages(incomingMessages);
+      console.log('Fetched messages:', data);
+      setMessages(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -56,11 +53,15 @@ export default function MessagesPage() {
       const response = await fetch(`/api/messages/conversation?user_id=${userId}&item_id=${message.item_id}&sender=${message.sender}`);
       const data = await response.json();
       
+      console.log('Fetched conversation:', data);
       setConversationMessages(data);
       setSelectedMessage(message);
       
       // Mark messages as read
-      await markMessagesAsRead(data.filter(msg => !msg.read).map(msg => msg.id));
+      const unreadMessageIds = data.filter(msg => !msg.read).map(msg => msg.id);
+      if (unreadMessageIds.length > 0) {
+        await markMessagesAsRead(unreadMessageIds);
+      }
     } catch (error) {
       console.error('Error fetching conversation:', error);
     }
@@ -82,7 +83,6 @@ export default function MessagesPage() {
         }),
       });
 
-      // Update local state
       setMessages(messages.map(msg =>
         messageIds.includes(msg.id)
           ? { ...msg, read: true }
@@ -100,12 +100,6 @@ export default function MessagesPage() {
     
     if (!replyText.trim() || isSending) {
       console.log('Aborting: empty text or already sending');
-      return;
-    }
-
-    // Check if this is a message we can actually reply to
-    if (selectedMessage.direction !== 'incoming') {
-      alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
       return;
     }
     
@@ -159,7 +153,6 @@ export default function MessagesPage() {
 
       console.log('Message sent successfully!');
       
-      // Add to local state immediately
       setMessages(prev => [...prev, data.data]);
       setConversationMessages(prev => [...prev, data.data]);
       
@@ -189,14 +182,12 @@ export default function MessagesPage() {
 
   // If viewing a conversation
   if (selectedMessage) {
-    const canReply = selectedMessage.direction === 'incoming';
-
     return (
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="flex h-screen bg-gray-50">
         <Sidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          {/* Header - STICKY */}
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
@@ -214,7 +205,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Messages - Scrollable */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
             {conversationMessages.map((msg, index) => {
               const isOutgoing = msg.direction === 'outgoing';
@@ -243,46 +234,30 @@ export default function MessagesPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Reply Input - STICKY */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
-            {canReply ? (
-              // CAN reply - show active reply input
-              <div className="flex gap-4 max-w-full overflow-x-hidden">
-                <textarea
-                  placeholder="Type your reply..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendReply();
-                    }
-                  }}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  rows={3}
-                />
-                <button 
-                  onClick={sendReply}
-                  disabled={!replyText.trim() || isSending}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {isSending ? 'Sending...' : 'Send'}
-                </button>
-              </div>
-            ) : (
-              // CANNOT reply - show disabled state
-              <div className="flex gap-4 max-w-full overflow-x-hidden">
-                <div className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-500 flex items-center justify-center">
-                  <p className="text-sm font-medium">Reply on eBay.com</p>
-                </div>
-                <button 
-                  disabled
-                  className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed h-fit"
-                >
-                  Send
-                </button>
-              </div>
-            )}
+          {/* Reply Input */}
+          <div className="bg-white border-t border-gray-200 p-6 flex-shrink-0">
+            <div className="flex gap-4 max-w-full overflow-x-hidden">
+              <textarea
+                placeholder="Type your reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendReply();
+                  }
+                }}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                rows={3}
+              />
+              <button 
+                onClick={sendReply}
+                disabled={!replyText.trim() || isSending}
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors h-fit disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isSending ? 'Sending...' : 'Send'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
