@@ -22,11 +22,27 @@ export default function MessagesPage() {
   const [conversationMessages, setConversationMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Listen for sidebar collapse state changes
+  useEffect(() => {
+    // Check initial state from localStorage
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+    setSidebarCollapsed(savedCollapsed === 'true');
+
+    // Listen for sidebar toggle events
+    const handleSidebarToggle = (event) => {
+      setSidebarCollapsed(event.detail.collapsed);
+    };
+
+    window.addEventListener('sidebar-toggle', handleSidebarToggle);
+    return () => window.removeEventListener('sidebar-toggle', handleSidebarToggle);
+  }, []);
 
   useEffect(() => {
     fetchUser();
@@ -410,7 +426,7 @@ export default function MessagesPage() {
         <div className="fixed left-0 top-0 h-screen">
           <Sidebar />
         </div>
-        <div className="flex-1 flex items-center justify-center ml-64">
+        <div className={`flex-1 flex items-center justify-center transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
       </div>
@@ -423,7 +439,7 @@ export default function MessagesPage() {
         <Sidebar />
       </div>
       
-      <div className="flex-1 ml-64 overflow-x-hidden min-w-0 max-w-full">
+      <div className={`flex-1 overflow-x-hidden min-w-0 max-w-full transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
       
       {selectedMessage ? (
         // Chat View
