@@ -31,6 +31,7 @@ export async function POST(request) {
       .from('user_tokens')
       .select('access_token')
       .eq('user_id', user_id)
+      .eq('platform', 'ebay')
       .single();
     
     if (tokenError || !tokenData?.access_token) {
