@@ -72,6 +72,7 @@ export async function POST(request) {
   <ItemID>${itemId}</ItemID>
   <MemberMessage>
     <Body>${messageBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Body>
+    <QuestionType>General</QuestionType>
     <RecipientID>${recipient}</RecipientID>
   </MemberMessage>
 </AddMemberMessageAAQToPartnerRequest>`;
