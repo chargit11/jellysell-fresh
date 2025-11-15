@@ -8,18 +8,23 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [conversationMessages, setConversationMessages] = useState([]);
-  const [currentFilter, setCurrentFilter] = useState('inbox');
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when conversation loads
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     fetchMessages();
   }, []);
 
+  // Auto-scroll when conversation changes
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (conversationMessages.length > 0) {
+      scrollToBottom();
     }
   }, [conversationMessages]);
 
@@ -28,6 +33,7 @@ export default function MessagesPage() {
       const userId = localStorage.getItem('user_id');
       if (!userId) {
         console.error('No user_id found');
+        setLoading(false);
         return;
       }
 
@@ -52,72 +58,119 @@ export default function MessagesPage() {
       
       setConversationMessages(data);
       setSelectedMessage(message);
+      
+      // Mark messages as read
+      await markMessagesAsRead(data.filter(msg => !msg.read).map(msg => msg.id));
     } catch (error) {
       console.error('Error fetching conversation:', error);
     }
   };
 
-  const sendReply = async () => {
-    if (!replyText.trim() || isSending) return;
-
-    // Check if this is a message we can actually reply to
-    if (!canReplyToMessage(selectedMessage)) {
-      alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
-      return;
-    }
-
-    setIsSending(true);
+  const markMessagesAsRead = async (messageIds) => {
+    if (messageIds.length === 0) return;
+    
     try {
       const userId = localStorage.getItem('user_id');
-      const response = await fetch('/api/messages/reply', {
+      await fetch('/api/messages/mark-read', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           user_id: userId,
-          item_id: selectedMessage.item_id,
-          recipient: selectedMessage.sender,
-          subject: `Re: ${selectedMessage.subject}`,
-          body: replyText,
-          parent_message_id: selectedMessage.message_id,
+          message_ids: messageIds
         }),
       });
 
-      if (response.ok) {
-        setReplyText('');
-        // Refresh the conversation to show the new reply
-        await fetchConversation(selectedMessage);
-      } else {
-        const error = await response.json();
-        alert(`Failed to send reply: ${error.error || 'Unknown error'}`);
-      }
+      // Update local state
+      setMessages(messages.map(msg =>
+        messageIds.includes(msg.id)
+          ? { ...msg, read: true }
+          : msg
+      ));
     } catch (error) {
-      console.error('Error sending reply:', error);
-      alert('Failed to send reply');
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  const sendReply = async () => {
+    console.log('=== SEND REPLY CLICKED ===');
+    console.log('Reply text:', replyText);
+    console.log('Is sending:', isSending);
+    
+    if (!replyText.trim() || isSending) {
+      console.log('Aborting: empty text or already sending');
+      return;
+    }
+
+    // Check if this is a message we can actually reply to
+    if (selectedMessage.direction !== 'incoming') {
+      alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
+      return;
+    }
+    
+    console.log('Selected message:', selectedMessage);
+    console.log('Sending reply to:', selectedMessage.sender);
+    
+    setIsSending(true);
+    
+    try {
+      const userId = localStorage.getItem('user_id');
+      console.log('User ID from localStorage:', userId);
+      
+      if (!userId) {
+        console.error('No user_id found in localStorage');
+        alert('User ID not found. Please log in again.');
+        setIsSending(false);
+        return;
+      }
+
+      const requestBody = {
+        recipient: selectedMessage.sender,
+        body: replyText,
+        itemId: selectedMessage.item_id,
+        user_id: userId
+      };
+      
+      console.log('Request body:', requestBody);
+      console.log('Making fetch request to /api/messages/send...');
+
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('Response received. Status:', response.status);
+      console.log('Response OK:', response.ok);
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        console.error('Failed to send message. Status:', response.status);
+        console.error('Error data:', data);
+        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+        setIsSending(false);
+        return;
+      }
+
+      console.log('Message sent successfully!');
+      
+      // Add to local state immediately
+      setMessages(prev => [...prev, data.data]);
+      setConversationMessages(prev => [...prev, data.data]);
+      
+      setReplyText('');
+      alert('Message sent successfully!');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Check console for details.');
     } finally {
       setIsSending(false);
     }
-  };
-
-  // Determine if we can reply to this message on JellySell
-  const canReplyToMessage = (message) => {
-    if (!message) return false;
-    
-    // Can only reply to INCOMING messages (from buyers asking about YOUR listings)
-    // Cannot reply to OUTGOING messages (messages YOU sent as a buyer)
-    return message.direction === 'incoming';
-  };
-
-  const getReplyDisabledReason = (message) => {
-    if (!message) return '';
-    
-    if (message.direction === 'outgoing') {
-      return 'Reply on eBay.com';
-    }
-    
-    // Add other cases here if needed
-    return '';
   };
 
   if (loading) {
@@ -136,19 +189,21 @@ export default function MessagesPage() {
 
   // If viewing a conversation
   if (selectedMessage) {
-    const canReply = canReplyToMessage(selectedMessage);
-    const disabledReason = getReplyDisabledReason(selectedMessage);
+    const canReply = selectedMessage.direction === 'incoming';
 
     return (
       <div className="flex h-screen bg-gray-50 overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+          {/* Header - STICKY */}
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setSelectedMessage(null)}
-                className="text-gray-600 hover:text-gray-900"
+                onClick={() => {
+                  setSelectedMessage(null);
+                  setConversationMessages([]);
+                }}
+                className="text-gray-600 hover:text-gray-900 font-semibold"
               >
                 ← Back
               </button>
@@ -159,7 +214,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Messages - Scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
             {conversationMessages.map((msg, index) => {
               const isOutgoing = msg.direction === 'outgoing';
@@ -188,7 +243,7 @@ export default function MessagesPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Reply Input - Conditional based on message type */}
+          {/* Reply Input - STICKY */}
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
             {canReply ? (
               // CAN reply - show active reply input
@@ -215,10 +270,10 @@ export default function MessagesPage() {
                 </button>
               </div>
             ) : (
-              // CANNOT reply - show disabled state with message
+              // CANNOT reply - show disabled state
               <div className="flex gap-4 max-w-full overflow-x-hidden">
                 <div className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-500 flex items-center justify-center">
-                  <p className="text-sm font-medium">{disabledReason}</p>
+                  <p className="text-sm font-medium">Reply on eBay.com</p>
                 </div>
                 <button 
                   disabled
