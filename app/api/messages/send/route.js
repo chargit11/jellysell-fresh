@@ -16,13 +16,34 @@ export async function POST(request) {
     const body = await request.json();
     console.log('Request body:', body);
     
-    const { recipient, body: messageBody, itemId, user_id } = body;
+    let { recipient, body: messageBody, itemId, user_id } = body;
     
     console.log('Sending message to eBay:', { recipient, itemId, user_id });
     
     if (!user_id || !recipient || !messageBody) {
       console.error('Missing fields:', { user_id, recipient, messageBody });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // If no itemId provided, try to find it from conversation history
+    if (!itemId) {
+      console.log('No itemId provided, searching conversation history...');
+      const { data: conversationMessages, error: convError } = await supabase
+        .from('ebay_messages')
+        .select('item_id')
+        .eq('sender', recipient)
+        .not('item_id', 'is', null)
+        .limit(1);
+
+      if (!convError && conversationMessages && conversationMessages.length > 0) {
+        itemId = conversationMessages[0].item_id;
+        console.log('Found itemId from conversation:', itemId);
+      } else {
+        console.error('Could not find itemId for this conversation');
+        return NextResponse.json({ 
+          error: 'Cannot send message: No item ID found. The original message may not have been synced with an item ID.' 
+        }, { status: 400 });
+      }
     }
     
     // Get user's eBay access token from database
