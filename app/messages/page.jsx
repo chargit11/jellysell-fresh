@@ -389,7 +389,7 @@ export default function MessagesPage() {
               // CANNOT reply - show disabled state with clickable link
               <div className="flex gap-4 max-w-full">
                 <a 
-                  href={`https://mesg.ebay.com/mesgweb/ViewMessages/0?messageId=${selectedMessage.message_id}`}
+                  href="https://mesg.ebay.com/mesgweb/ViewMessages"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer"
