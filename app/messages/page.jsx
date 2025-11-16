@@ -386,11 +386,16 @@ export default function MessagesPage() {
                 <button onClick={sendReply} disabled={!replyText.trim() || isSending} className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 h-fit disabled:bg-gray-400 disabled:cursor-not-allowed">{isSending ? 'Sending...' : 'Send'}</button>
               </div>
             ) : (
-              // CANNOT reply - show disabled state with message
+              // CANNOT reply - show disabled state with clickable link
               <div className="flex gap-4 max-w-full">
-                <div className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-500 flex items-center justify-center">
-                  <p className="text-sm font-medium">Reply on eBay.com</p>
-                </div>
+                <a 
+                  href={`https://mesg.ebay.com/mesgweb/ViewMessages/0?messageId=${selectedMessage.message_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  <p className="text-sm font-medium">Reply on eBay.com →</p>
+                </a>
                 <button disabled className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed h-fit">Send</button>
               </div>
             )}
