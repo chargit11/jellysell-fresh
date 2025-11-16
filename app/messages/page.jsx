@@ -187,6 +187,12 @@ export default function MessagesPage() {
   const sendReply = async () => {
     if (!replyText.trim() || isSending) return;
     
+    // Check if we can actually reply to this message
+    if (selectedMessage.direction !== 'incoming') {
+      alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
+      return;
+    }
+    
     setIsSending(true);
     
     try {
@@ -373,10 +379,21 @@ export default function MessagesPage() {
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
-            <div className="flex gap-4 max-w-full">
-              <textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }}} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" rows={3} />
-              <button onClick={sendReply} className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 h-fit">{isSending ? 'Sending...' : 'Send'}</button>
-            </div>
+            {selectedMessage.direction === 'incoming' ? (
+              // CAN reply - show active reply input
+              <div className="flex gap-4 max-w-full">
+                <textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }}} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" rows={3} />
+                <button onClick={sendReply} disabled={!replyText.trim() || isSending} className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 h-fit disabled:bg-gray-400 disabled:cursor-not-allowed">{isSending ? 'Sending...' : 'Send'}</button>
+              </div>
+            ) : (
+              // CANNOT reply - show disabled state with message
+              <div className="flex gap-4 max-w-full">
+                <div className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-500 flex items-center justify-center">
+                  <p className="text-sm font-medium">Reply on eBay.com</p>
+                </div>
+                <button disabled className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed h-fit">Send</button>
+              </div>
+            )}
           </div>
         </div>
       ) : (
