@@ -188,7 +188,7 @@ export default function MessagesPage() {
     if (!replyText.trim() || isSending) return;
     
     // Check if we can actually reply to this message
-    if (selectedMessage.direction !== 'incoming') {
+    if (selectedMessage.direction !== 'incoming' || !selectedMessage.item_id) {
       alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
       return;
     }
@@ -379,7 +379,7 @@ export default function MessagesPage() {
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
-            {selectedMessage.direction === 'incoming' ? (
+            {(selectedMessage.direction === 'incoming' && selectedMessage.item_id) ? (
               // CAN reply - show active reply input
               <div className="flex gap-4 max-w-full">
                 <textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }}} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" rows={3} />
