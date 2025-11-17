@@ -78,6 +78,8 @@ export async function POST(request) {
 </AddMemberMessageAAQToPartnerRequest>`;
     
     console.log('Sending request to eBay API...');
+    console.log('XML Request:', xmlRequest);
+    
     const response = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
       headers: {
@@ -94,6 +96,21 @@ export async function POST(request) {
     
     const xmlText = await response.text();
     console.log('eBay API response:', xmlText);
+    
+    // Extract detailed error information
+    const ackMatch = xmlText.match(/<Ack>(.*?)<\/Ack>/);
+    const ack = ackMatch ? ackMatch[1] : 'Unknown';
+    
+    const errorCodeMatch = xmlText.match(/<ErrorCode>(.*?)<\/ErrorCode>/);
+    const errorCode = errorCodeMatch ? errorCodeMatch[1] : null;
+    
+    const shortMessageMatch = xmlText.match(/<ShortMessage>(.*?)<\/ShortMessage>/);
+    const shortMessage = shortMessageMatch ? shortMessageMatch[1] : null;
+    
+    const longMessageMatch = xmlText.match(/<LongMessage>(.*?)<\/LongMessage>/);
+    const longMessage = longMessageMatch ? longMessageMatch[1] : null;
+    
+    console.log('Parsed eBay response:', { ack, errorCode, shortMessage, longMessage });
     
     // Check if successful
     if (xmlText.includes('<Ack>Success</Ack>') || xmlText.includes('<Ack>Warning</Ack>')) {
@@ -131,9 +148,24 @@ export async function POST(request) {
         data: newMessage
       });
     } else {
-      console.error('eBay API error:', xmlText);
+      // Return detailed error information
+      const errorDetails = {
+        ack,
+        errorCode,
+        shortMessage,
+        longMessage,
+        itemId,
+        recipient,
+        fullXmlResponse: xmlText
+      };
+      
+      console.error('eBay API error:', errorDetails);
+      
       return NextResponse.json(
-        { error: 'Failed to send message via eBay', details: xmlText },
+        { 
+          error: shortMessage || 'Failed to send message via eBay',
+          details: errorDetails
+        },
         { status: 500 }
       );
     }
