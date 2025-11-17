@@ -12,7 +12,6 @@ const supabase = createClient(
 // Helper function to extract item ID from text
 const extractItemIdFromText = (text) => {
   if (!text) return null;
-  // Match eBay item IDs (typically 12-14 digits)
   const match = text.match(/\b(\d{12,14})\b/);
   return match ? match[1] : null;
 };
@@ -33,7 +32,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Get the original message from the conversation - REMOVED the item_id filter
     console.log('Fetching original message from database...');
     const { data: originalMessages, error: msgError } = await supabase
       .from('ebay_messages')
@@ -53,13 +51,11 @@ export async function POST(request) {
     const originalMessage = originalMessages[0];
     const originalMessageId = originalMessage.message_id;
     
-    // Use provided itemId first, then database item_id, then extract from text
     if (!itemId) {
       itemId = originalMessage.item_id;
     }
     
     if (!itemId) {
-      // Try to extract from subject/body
       itemId = extractItemIdFromText(originalMessage.subject) || extractItemIdFromText(originalMessage.body);
       if (itemId) {
         console.log('Extracted item ID from message text:', itemId);
@@ -75,7 +71,6 @@ export async function POST(request) {
       }, { status: 400 });
     }
     
-    // Get user's eBay access token from database
     console.log('Fetching eBay token for user_id:', user_id);
     const { data: tokenData, error: tokenError } = await supabase
       .from('user_tokens')
@@ -92,7 +87,6 @@ export async function POST(request) {
     const accessToken = tokenData.access_token;
     console.log('Got eBay access token');
     
-    // Use AddMemberMessageRTQ (Reply To Question) instead of AAQToPartner
     const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
 <AddMemberMessageRTQRequest xmlns="urn:ebay:apis:eBLBaseComponents">
   <RequesterCredentials>
@@ -127,7 +121,6 @@ export async function POST(request) {
     const xmlText = await response.text();
     console.log('eBay API response:', xmlText);
     
-    // Extract detailed error information
     const ackMatch = xmlText.match(/<Ack>(.*?)<\/Ack>/);
     const ack = ackMatch ? ackMatch[1] : 'Unknown';
     
@@ -142,11 +135,9 @@ export async function POST(request) {
     
     console.log('Parsed eBay response:', { ack, errorCode, shortMessage, longMessage });
     
-    // Check if successful
     if (xmlText.includes('<Ack>Success</Ack>') || xmlText.includes('<Ack>Warning</Ack>')) {
       console.log('Message sent successfully to eBay');
       
-      // Save sent message to database
       const newMessage = {
         user_id: user_id,
         message_id: `sent_${Date.now()}_${Math.random()}`,
@@ -178,7 +169,17 @@ export async function POST(request) {
         data: newMessage
       });
     } else {
-      // Return detailed error information
+      // Check for "Invalid item" error - means item has ended/sold
+      if (shortMessage && (shortMessage.includes('Invalid item') || errorCode === '291')) {
+        return NextResponse.json(
+          { 
+            error: 'This item has ended or been sold. You can only reply on eBay.com',
+            isEndedItem: true
+          },
+          { status: 400 }
+        );
+      }
+      
       const errorDetails = {
         ack,
         errorCode,
