@@ -25,25 +25,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // If no itemId provided, try to find it from conversation history
-    if (!itemId) {
-      console.log('No itemId provided, searching conversation history...');
-      const { data: conversationMessages, error: convError } = await supabase
-        .from('ebay_messages')
-        .select('item_id')
-        .eq('sender', recipient)
-        .not('item_id', 'is', null)
-        .limit(1);
+    // Get the original message from the conversation to get the MessageID
+    console.log('Fetching original message from database...');
+    const { data: originalMessages, error: msgError } = await supabase
+      .from('ebay_messages')
+      .select('message_id, item_id')
+      .eq('sender', recipient)
+      .eq('direction', 'incoming')
+      .not('item_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-      if (!convError && conversationMessages && conversationMessages.length > 0) {
-        itemId = conversationMessages[0].item_id;
-        console.log('Found itemId from conversation:', itemId);
-      } else {
-        console.error('Could not find itemId for this conversation');
-        return NextResponse.json({ 
-          error: 'Cannot send message: No item ID found. The original message may not have been synced with an item ID.' 
-        }, { status: 400 });
-      }
+    if (msgError || !originalMessages || originalMessages.length === 0) {
+      console.error('Could not find original message:', msgError);
+      return NextResponse.json({ 
+        error: 'Cannot reply: Original message not found in database' 
+      }, { status: 400 });
+    }
+
+    const originalMessageId = originalMessages[0].message_id;
+    itemId = itemId || originalMessages[0].item_id;
+
+    console.log('Original message ID:', originalMessageId);
+    console.log('Item ID:', itemId);
+
+    if (!itemId) {
+      return NextResponse.json({ 
+        error: 'Cannot send message: No item ID found' 
+      }, { status: 400 });
     }
     
     // Get user's eBay access token from database
@@ -63,29 +72,30 @@ export async function POST(request) {
     const accessToken = tokenData.access_token;
     console.log('Got eBay access token');
     
-    // Send message via eBay Trading API
+    // Use AddMemberMessageRTQ (Reply To Question) instead of AAQToPartner
     const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
-<AddMemberMessageAAQToPartnerRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+<AddMemberMessageRTQRequest xmlns="urn:ebay:apis:eBLBaseComponents">
   <RequesterCredentials>
     <eBayAuthToken>${accessToken}</eBayAuthToken>
   </RequesterCredentials>
   <ItemID>${itemId}</ItemID>
   <MemberMessage>
     <Body>${messageBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Body>
-    <QuestionType>General</QuestionType>
+    <ParentMessageID>${originalMessageId}</ParentMessageID>
     <RecipientID>${recipient}</RecipientID>
   </MemberMessage>
-</AddMemberMessageAAQToPartnerRequest>`;
+</AddMemberMessageRTQRequest>`;
     
     console.log('Sending request to eBay API...');
-    console.log('XML Request:', xmlRequest);
+    console.log('Using AddMemberMessageRTQ (Reply To Question)');
+    console.log('ParentMessageID:', originalMessageId);
     
     const response = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
       headers: {
         'X-EBAY-API-SITEID': '0',
         'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
-        'X-EBAY-API-CALL-NAME': 'AddMemberMessageAAQToPartner',
+        'X-EBAY-API-CALL-NAME': 'AddMemberMessageRTQ',
         'X-EBAY-API-APP-NAME': 'Christia-JellySel-PRD-edec84694-300e7c9b',
         'X-EBAY-API-DEV-NAME': 'Christia-JellySel-PRD-edec84694-300e7c9b',
         'X-EBAY-API-CERT-NAME': 'PRD-dec8469432c4-0955-420e-89d4-44cc',
@@ -156,7 +166,8 @@ export async function POST(request) {
         longMessage,
         itemId,
         recipient,
-        fullXmlResponse: xmlText
+        originalMessageId,
+        fullXmlResponse: xmlText.substring(0, 2000)
       };
       
       console.error('eBay API error:', errorDetails);
