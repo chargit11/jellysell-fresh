@@ -113,7 +113,7 @@ export default function MessagesPage() {
     // Filter to ONLY show incoming messages (from buyers asking about YOUR listings)
     const buyerMessages = (data || []).filter(msg => {
       const sender = (msg.sender || '').toLowerCase();
-      const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
+      const isValidSender = sender !== 'ebay'       const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';      const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown'; sender !== 'ebay user'       const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';      const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown'; sender !== '';
       const isIncoming = msg.direction === 'incoming' || !msg.direction; // If no direction, assume incoming for backwards compatibility
       
       return isValidSender && isIncoming;
