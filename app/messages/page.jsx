@@ -10,6 +10,14 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
+// Helper function to extract item ID from text
+const extractItemIdFromText = (text) => {
+  if (!text) return null;
+  // Match eBay item IDs (typically 12-14 digits)
+  const match = text.match(/\b(\d{12,14})\b/);
+  return match ? match[1] : null;
+};
+
 export default function MessagesPage() {
   const [messages, setMessages] = useState([]);
   const [filteredMessages, setFilteredMessages] = useState([]);
@@ -212,9 +220,21 @@ export default function MessagesPage() {
       }
 
       // Find any incoming message with an item_id
-      const incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
+      let incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
       
+      // If no item_id found, try to extract from subject/body
       if (!incomingMessageWithItem) {
+        const incomingMessage = conversationMessages.find(m => m.direction === 'incoming');
+        if (incomingMessage) {
+          const extractedItemId = extractItemIdFromText(incomingMessage.subject) || extractItemIdFromText(incomingMessage.body);
+          if (extractedItemId) {
+            console.log('Extracted item ID from text:', extractedItemId);
+            incomingMessageWithItem = { ...incomingMessage, item_id: extractedItemId };
+          }
+        }
+      }
+      
+      if (!incomingMessageWithItem || !incomingMessageWithItem.item_id) {
         alert('Cannot reply: No item ID found for this conversation');
         setIsSending(false);
         return;
@@ -323,8 +343,22 @@ export default function MessagesPage() {
     { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true).length },
   ];
 
-  // Check if conversation has any incoming message with item_id (to determine if we can reply)
-  const canReply = conversationMessages.some(m => m.direction === 'incoming' && m.item_id);
+  // Check if conversation has any incoming message with item_id OR item_id in subject/body
+  const getConversationItemId = () => {
+    // Try to find item_id in database first
+    const msgWithItemId = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
+    if (msgWithItemId) return msgWithItemId.item_id;
+    
+    // Fallback: extract from subject/body
+    const incomingMsg = conversationMessages.find(m => m.direction === 'incoming');
+    if (incomingMsg) {
+      return extractItemIdFromText(incomingMsg.subject) || extractItemIdFromText(incomingMsg.body);
+    }
+    
+    return null;
+  };
+
+  const canReply = !!getConversationItemId();
 
   if (loading) {
     return (
