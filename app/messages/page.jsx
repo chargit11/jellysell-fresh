@@ -114,7 +114,7 @@ export default function MessagesPage() {
     const buyerMessages = (data || []).filter(msg => {
       const sender = (msg.sender || '').toLowerCase();
       const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
-      const isIncoming = msg.direction === 'incoming' || !msg.direction; // If no direction, assume incoming for backwards compatibility
+      const isIncoming = msg.direction === 'incoming' || !msg.direction;
       
       return isValidSender && isIncoming;
     });
@@ -167,14 +167,23 @@ export default function MessagesPage() {
   };
 
   const openConversation = async (message) => {
-    const allMessagesInConversation = messages
-      .filter(m => m.sender === message.sender)
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    // Get ALL messages in this conversation (both incoming AND outgoing)
+    const { data: allMessages, error } = await supabase
+      .from('ebay_messages')
+      .select('*')
+      .eq('sender', message.sender)
+      .order('created_at', { ascending: true });
     
-    setConversationMessages(allMessagesInConversation);
+    if (error) {
+      console.error('Error fetching conversation:', error);
+      return;
+    }
+    
+    setConversationMessages(allMessages || []);
     setSelectedMessage(message);
 
-    const unreadMessageIds = allMessagesInConversation.filter(m => !m.read).map(m => m.message_id);
+    // Mark unread messages as read
+    const unreadMessageIds = (allMessages || []).filter(m => !m.read && m.direction === 'incoming').map(m => m.message_id);
 
     if (unreadMessageIds.length > 0) {
       try {
@@ -191,12 +200,6 @@ export default function MessagesPage() {
   const sendReply = async () => {
     if (!replyText.trim() || isSending) return;
     
-    // Check if we can actually reply to this message
-    if (selectedMessage.direction !== 'incoming' || !selectedMessage.item_id) {
-      alert('This message cannot be replied to on JellySell. Please reply on eBay.com');
-      return;
-    }
-    
     setIsSending(true);
     
     try {
@@ -208,13 +211,22 @@ export default function MessagesPage() {
         return;
       }
 
+      // Find any incoming message with an item_id
+      const incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
+      
+      if (!incomingMessageWithItem) {
+        alert('Cannot reply: No item ID found for this conversation');
+        setIsSending(false);
+        return;
+      }
+
       const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient: selectedMessage.sender,
           body: replyText,
-          itemId: selectedMessage.item_id,
+          itemId: incomingMessageWithItem.item_id,
           user_id: userId
         })
       });
@@ -226,7 +238,7 @@ export default function MessagesPage() {
         return;
       }
 
-      setMessages(prev => [...prev, data.data]);
+      // Add the sent message to the conversation immediately
       setConversationMessages(prev => [...prev, data.data]);
       setReplyText('');
       alert('Message sent successfully!');
@@ -311,6 +323,9 @@ export default function MessagesPage() {
     { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true).length },
   ];
 
+  // Check if conversation has any incoming message with item_id (to determine if we can reply)
+  const canReply = conversationMessages.some(m => m.direction === 'incoming' && m.item_id);
+
   if (loading) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
@@ -383,14 +398,12 @@ export default function MessagesPage() {
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex-shrink-0">
-            {(selectedMessage.direction === 'incoming' && selectedMessage.item_id) ? (
-              // CAN reply - show active reply input
+            {canReply ? (
               <div className="flex gap-4 max-w-full">
                 <textarea placeholder="Type your reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }}} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" rows={3} />
                 <button onClick={sendReply} disabled={!replyText.trim() || isSending} className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 h-fit disabled:bg-gray-400 disabled:cursor-not-allowed">{isSending ? 'Sending...' : 'Send'}</button>
               </div>
             ) : (
-              // CANNOT reply - show disabled state with clickable link
               <div className="flex gap-4 max-w-full">
                 <a 
                   href="https://mesg.ebay.com/mesgweb/ViewMessages"
