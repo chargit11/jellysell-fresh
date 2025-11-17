@@ -84,9 +84,9 @@ export async function POST(request) {
         'X-EBAY-API-SITEID': '0',
         'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
         'X-EBAY-API-CALL-NAME': 'AddMemberMessageAAQToPartner',
-        'X-EBAY-API-APP-NAME': process.env.EBAY_CLIENT_ID,
-        'X-EBAY-API-DEV-NAME': process.env.EBAY_CLIENT_ID,
-        'X-EBAY-API-CERT-NAME': process.env.EBAY_CLIENT_SECRET,
+        'X-EBAY-API-APP-NAME': 'Christia-JellySel-PRD-edec84694-300e7c9b',
+        'X-EBAY-API-DEV-NAME': 'Christia-JellySel-PRD-edec84694-300e7c9b',
+        'X-EBAY-API-CERT-NAME': 'PRD-dec8469432c4-0955-420e-89d4-44cc',
         'Content-Type': 'text/xml'
       },
       body: xmlRequest
