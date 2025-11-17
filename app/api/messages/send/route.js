@@ -9,6 +9,14 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
+// Helper function to extract item ID from text
+const extractItemIdFromText = (text) => {
+  if (!text) return null;
+  // Match eBay item IDs (typically 12-14 digits)
+  const match = text.match(/\b(\d{12,14})\b/);
+  return match ? match[1] : null;
+};
+
 export async function POST(request) {
   console.log('=== MESSAGE SEND API CALLED ===');
   
@@ -25,14 +33,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Get the original message from the conversation to get the MessageID
+    // Get the original message from the conversation - REMOVED the item_id filter
     console.log('Fetching original message from database...');
     const { data: originalMessages, error: msgError } = await supabase
       .from('ebay_messages')
-      .select('message_id, item_id')
+      .select('message_id, item_id, subject, body')
       .eq('sender', recipient)
       .eq('direction', 'incoming')
-      .not('item_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -43,15 +50,28 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    const originalMessageId = originalMessages[0].message_id;
-    itemId = itemId || originalMessages[0].item_id;
+    const originalMessage = originalMessages[0];
+    const originalMessageId = originalMessage.message_id;
+    
+    // Use provided itemId first, then database item_id, then extract from text
+    if (!itemId) {
+      itemId = originalMessage.item_id;
+    }
+    
+    if (!itemId) {
+      // Try to extract from subject/body
+      itemId = extractItemIdFromText(originalMessage.subject) || extractItemIdFromText(originalMessage.body);
+      if (itemId) {
+        console.log('Extracted item ID from message text:', itemId);
+      }
+    }
 
     console.log('Original message ID:', originalMessageId);
     console.log('Item ID:', itemId);
 
     if (!itemId) {
       return NextResponse.json({ 
-        error: 'Cannot send message: No item ID found' 
+        error: 'Cannot send message: No item ID found in database or message text' 
       }, { status: 400 });
     }
     
