@@ -9,7 +9,6 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
-// Helper function to extract item ID from text
 const extractItemIdFromText = (text) => {
   if (!text) return null;
   const match = text.match(/\b(\d{12,14})\b/);
@@ -67,7 +66,8 @@ export async function POST(request) {
 
     if (!itemId) {
       return NextResponse.json({ 
-        error: 'Cannot send message: No item ID found in database or message text' 
+        error: 'Cannot send message: No item ID found',
+        shouldOpenEbay: true
       }, { status: 400 });
     }
     
@@ -101,8 +101,9 @@ export async function POST(request) {
 </AddMemberMessageRTQRequest>`;
     
     console.log('Sending request to eBay API...');
-    console.log('Using AddMemberMessageRTQ (Reply To Question)');
+    console.log('Using AddMemberMessageRTQ');
     console.log('ParentMessageID:', originalMessageId);
+    console.log('ItemID:', itemId);
     
     const response = await fetch('https://api.ebay.com/ws/api.dll', {
       method: 'POST',
@@ -169,36 +170,17 @@ export async function POST(request) {
         data: newMessage
       });
     } else {
-      // Check for "Invalid item" error - means item has ended/sold
-      if (shortMessage && (shortMessage.includes('Invalid item') || errorCode === '291')) {
-        return NextResponse.json(
-          { 
-            error: 'This item has ended or been sold. You can only reply on eBay.com',
-            isEndedItem: true
-          },
-          { status: 400 }
-        );
-      }
-      
-      const errorDetails = {
-        ack,
-        errorCode,
-        shortMessage,
-        longMessage,
-        itemId,
-        recipient,
-        originalMessageId,
-        fullXmlResponse: xmlText.substring(0, 2000)
-      };
-      
-      console.error('eBay API error:', errorDetails);
+      // eBay returned an error - likely item has ended or user doesn't have permission
+      console.error('eBay API error:', { errorCode, shortMessage, longMessage });
       
       return NextResponse.json(
         { 
-          error: shortMessage || 'Failed to send message via eBay',
-          details: errorDetails
+          error: `Cannot send reply via API: ${shortMessage || 'Unknown error'}. Please reply on eBay.com instead.`,
+          shouldOpenEbay: true,
+          ebayErrorCode: errorCode,
+          ebayErrorMessage: shortMessage
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
   } catch (error) {
