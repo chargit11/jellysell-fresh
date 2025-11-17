@@ -254,7 +254,14 @@ export default function MessagesPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+        if (data.isEndedItem) {
+          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply.`);
+          if (shouldOpen) {
+            window.open('https://mesg.ebay.com/mesgweb/ViewMessages', '_blank');
+          }
+        } else {
+          alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+        }
         return;
       }
 
