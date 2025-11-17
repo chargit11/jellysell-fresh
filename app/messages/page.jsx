@@ -255,7 +255,7 @@ export default function MessagesPage() {
 
       if (!response.ok) {
         if (data.isEndedItem) {
-          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply.`);
+          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply. You may need to enable popups in your browser.`);
           if (shouldOpen) {
             window.open('https://mesg.ebay.com/mesgweb/ViewMessages', '_blank');
           }
