@@ -268,7 +268,7 @@ export default function MessagesPage() {
       // Add the sent message to the conversation immediately
       setConversationMessages(prev => [...prev, data.data]);
       setReplyText('');
-      alert('Message sent successfully!');
+      // Message sent successfully - no alert needed
     } catch (error) {
       alert(`Failed to send message: ${error.message}`);
     } finally {
@@ -428,7 +428,8 @@ export default function MessagesPage() {
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
                       {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
-                      {(msg.body && msg.body !== msg.subject) && <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body}</p>}
+                      {msg.body && <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body}</p>}
+                      {!msg.body && !isOutgoing && <p className="text-sm text-gray-400 italic">No message text</p>}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">{isOutgoing && 'You • '}{new Date(msg.created_at).toLocaleString()}</p>
                   </div>
