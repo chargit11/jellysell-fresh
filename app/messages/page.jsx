@@ -32,6 +32,7 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [ebayConnected, setEbayConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -129,6 +130,39 @@ export default function MessagesPage() {
 
     setMessages(buyerMessages);
     setLoading(false);
+  };
+
+  const syncMessages = async () => {
+    setIsSyncing(true);
+    try {
+      // Communicate with Chrome extension to trigger sync
+      if (typeof window !== 'undefined' && window.chrome && window.chrome.runtime) {
+        try {
+          // Send message to extension
+          window.postMessage({ type: 'JELLYSELL_SYNC_MESSAGES' }, '*');
+          
+          console.log('Sync triggered via extension');
+          
+          // Wait 3 seconds for sync to complete, then refresh messages
+          setTimeout(async () => {
+            await fetchMessages();
+            setIsSyncing(false);
+          }, 3000);
+          
+        } catch (extError) {
+          console.error('Extension communication failed:', extError);
+          alert('Please make sure the JellySell Chrome extension is installed and enabled');
+          setIsSyncing(false);
+        }
+      } else {
+        alert('Chrome extension not detected. Please install the JellySell extension to sync messages.');
+        setIsSyncing(false);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      alert('Failed to sync messages');
+      setIsSyncing(false);
+    }
   };
 
   const filterMessages = () => {
@@ -471,6 +505,28 @@ export default function MessagesPage() {
                 <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
             </div>
+            <button
+              onClick={syncMessages}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-full font-semibold text-sm hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSyncing ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Sync
+                </>
+              )}
+            </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full font-semibold text-sm text-gray-700 hover:bg-gray-50">Auto-reply<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>
           </div>
 
