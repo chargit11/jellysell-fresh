@@ -59,6 +59,14 @@ export default function MessagesPage() {
   useEffect(() => {
     if (ebayConnected) {
       fetchMessages();
+      
+      // Auto-refresh every 30 seconds
+      const autoRefreshInterval = setInterval(() => {
+        console.log('🔄 Auto-refreshing messages...');
+        fetchMessages();
+      }, 30 * 1000); // 30 seconds
+      
+      return () => clearInterval(autoRefreshInterval);
     } else {
       setMessages([]);
       setLoading(false);
