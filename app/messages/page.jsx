@@ -254,8 +254,8 @@ export default function MessagesPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.isEndedItem) {
-          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply. You may need to enable popups in your browser.`);
+        if (data.shouldOpenEbay || data.isEndedItem) {
+          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply.`);
           if (shouldOpen) {
             window.open('https://mesg.ebay.com/mesgweb/ViewMessages', '_blank');
           }
@@ -428,7 +428,7 @@ export default function MessagesPage() {
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
                       {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
-                      <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body || msg.subject}</p>
+                      {(msg.body && msg.body !== msg.subject) && <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body}</p>}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">{isOutgoing && 'You • '}{new Date(msg.created_at).toLocaleString()}</p>
                   </div>
