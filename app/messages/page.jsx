@@ -10,10 +10,8 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aGptemRhdnNiYXV1Z3ViZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDk4NzUsImV4cCI6MjA3NTI4NTg3NX0.rKnW3buNrTrQVWkvXlplX0Y1BUpoJ4AVv04D5x8zyVw'
 );
 
-// Helper function to extract item ID from text
 const extractItemIdFromText = (text) => {
   if (!text) return null;
-  // Match eBay item IDs (typically 12-14 digits)
   const match = text.match(/\b(\d{12,14})\b/);
   return match ? match[1] : null;
 };
@@ -60,11 +58,10 @@ export default function MessagesPage() {
     if (ebayConnected) {
       fetchMessages();
       
-      // Auto-refresh every 10 seconds
       const autoRefreshInterval = setInterval(() => {
         console.log('🔄 Auto-refreshing messages...');
         fetchMessages();
-      }, 10 * 1000); // 10 seconds
+      }, 10 * 1000);
       
       return () => clearInterval(autoRefreshInterval);
     } else {
@@ -82,6 +79,27 @@ export default function MessagesPage() {
       scrollToBottom();
     }
   }, [conversationMessages]);
+
+  // Auto-refresh conversation when chatbox is open
+  useEffect(() => {
+    if (!selectedMessage) return;
+    
+    const refreshConversation = async () => {
+      console.log('🔄 Auto-refreshing conversation...');
+      const { data, error } = await supabase
+        .from('ebay_messages')
+        .select('*')
+        .eq('sender', selectedMessage.sender)
+        .order('created_at', { ascending: true });
+      
+      if (!error && data) {
+        setConversationMessages(data);
+      }
+    };
+    
+    const interval = setInterval(refreshConversation, 5000);
+    return () => clearInterval(interval);
+  }, [selectedMessage]);
 
   const checkEbayConnection = async () => {
     try {
@@ -127,7 +145,6 @@ export default function MessagesPage() {
       return;
     }
 
-    // Filter to ONLY show incoming messages (from buyers asking about YOUR listings)
     const buyerMessages = (data || []).filter(msg => {
       const sender = (msg.sender || '').toLowerCase();
       const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
@@ -143,15 +160,12 @@ export default function MessagesPage() {
   const syncMessages = async () => {
     setIsSyncing(true);
     try {
-      // Communicate with Chrome extension to trigger sync
       if (typeof window !== 'undefined' && window.chrome && window.chrome.runtime) {
         try {
-          // Send message to extension
           window.postMessage({ type: 'JELLYSELL_SYNC_MESSAGES' }, '*');
           
           console.log('Sync triggered via extension');
           
-          // Wait 3 seconds for sync to complete, then refresh messages
           setTimeout(async () => {
             await fetchMessages();
             setIsSyncing(false);
@@ -217,7 +231,6 @@ export default function MessagesPage() {
   };
 
   const openConversation = async (message) => {
-    // Get ALL messages in this conversation (both incoming AND outgoing)
     const { data: allMessages, error } = await supabase
       .from('ebay_messages')
       .select('*')
@@ -232,7 +245,6 @@ export default function MessagesPage() {
     setConversationMessages(allMessages || []);
     setSelectedMessage(message);
 
-    // Mark unread messages as read
     const unreadMessageIds = (allMessages || []).filter(m => !m.read && m.direction === 'incoming').map(m => m.message_id);
 
     if (unreadMessageIds.length > 0) {
@@ -261,10 +273,8 @@ export default function MessagesPage() {
         return;
       }
 
-      // Find any incoming message with an item_id
       let incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
       
-      // If no item_id found, try to extract from subject/body
       if (!incomingMessageWithItem) {
         const incomingMessage = conversationMessages.find(m => m.direction === 'incoming');
         if (incomingMessage) {
@@ -307,10 +317,8 @@ export default function MessagesPage() {
         return;
       }
 
-      // Add the sent message to the conversation immediately
       setConversationMessages(prev => [...prev, data.data]);
       setReplyText('');
-      // Message sent successfully - no alert needed
     } catch (error) {
       alert(`Failed to send message: ${error.message}`);
     } finally {
@@ -392,13 +400,10 @@ export default function MessagesPage() {
     { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true).length },
   ];
 
-  // Check if conversation has any incoming message with item_id OR item_id in subject/body
   const getConversationItemId = () => {
-    // Try to find item_id in database first
     const msgWithItemId = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
     if (msgWithItemId) return msgWithItemId.item_id;
     
-    // Fallback: extract from subject/body
     const incomingMsg = conversationMessages.find(m => m.direction === 'incoming');
     if (incomingMsg) {
       return extractItemIdFromText(incomingMsg.subject) || extractItemIdFromText(incomingMsg.body);
