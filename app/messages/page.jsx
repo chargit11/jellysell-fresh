@@ -475,8 +475,29 @@ export default function MessagesPage() {
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
                       {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
-                      {msg.body && <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body}</p>}
-                      {!msg.body && !isOutgoing && <p className="text-sm text-gray-400 italic">No message text</p>}
+                      
+                      {msg.body && msg.body !== '[Image]' && (
+                        <p className={`text-sm whitespace-pre-wrap break-words ${isOutgoing ? 'text-white' : 'text-gray-900'}`}>{msg.body}</p>
+                      )}
+                      
+                      {msg.image_url && (
+                        <div className="mt-2">
+                          <img 
+                            src={msg.image_url} 
+                            alt="Message attachment" 
+                            className="max-w-full h-auto rounded-lg border border-gray-200"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
+                          />
+                          <p className="text-sm text-gray-400 italic mt-2" style={{display: 'none'}}>Image failed to load</p>
+                        </div>
+                      )}
+                      
+                      {!msg.body && !msg.image_url && !isOutgoing && (
+                        <p className="text-sm text-gray-400 italic">No message text</p>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">{isOutgoing && 'You • '}{new Date(msg.created_at).toLocaleString()}</p>
                   </div>
