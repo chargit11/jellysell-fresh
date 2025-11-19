@@ -56,16 +56,21 @@ export async function GET(req) {
     const userData = await userResponse.json();
     const shop_id = userData.shop_id || userData.primary_shop_id;
 
+    // Delete existing token if any
+    await supabase
+      .from('etsy_tokens')
+      .delete()
+      .eq('user_id', user_id);
+
+    // Insert new token
     const { error: dbError } = await supabase
       .from('etsy_tokens')
-      .upsert({
+      .insert({
         user_id,
         shop_id: shop_id.toString(),
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
         expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-      }, {
-        onConflict: 'user_id'
       });
 
     if (dbError) {
