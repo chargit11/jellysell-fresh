@@ -17,7 +17,8 @@ export async function GET(req) {
       return Response.redirect('https://jellysell.com/connections?error=missing_params');
     }
 
-    const { user_id } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+    const { user_id, code_verifier } = stateData;
 
     const tokenResponse = await fetch('https://api.etsy.com/v3/public/oauth/token', {
       method: 'POST',
@@ -29,7 +30,7 @@ export async function GET(req) {
         client_id: 'zmldauxi8u7zz87qztr6l64x',
         redirect_uri: 'https://jellysell.com/api/etsy/callback',
         code: code,
-        code_verifier: 'code_challenge',
+        code_verifier: code_verifier,
       }),
     });
 
