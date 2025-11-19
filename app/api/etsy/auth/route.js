@@ -1,4 +1,17 @@
+import crypto from 'crypto';
+
 export const dynamic = 'force-dynamic';
+
+function base64URLEncode(str) {
+  return str.toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+function sha256(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest();
+}
 
 export async function GET(req) {
   try {
@@ -9,7 +22,15 @@ export async function GET(req) {
       return Response.json({ error: 'Missing user_id' }, { status: 400 });
     }
 
-    const state = Buffer.from(JSON.stringify({ user_id })).toString('base64');
+    // Generate PKCE code verifier and challenge
+    const codeVerifier = base64URLEncode(crypto.randomBytes(32));
+    const codeChallenge = base64URLEncode(sha256(codeVerifier));
+
+    // Store verifier in state so we can retrieve it in callback
+    const state = Buffer.from(JSON.stringify({ 
+      user_id, 
+      code_verifier: codeVerifier 
+    })).toString('base64');
     
     const authUrl = new URL('https://www.etsy.com/oauth/connect');
     authUrl.searchParams.append('response_type', 'code');
@@ -17,7 +38,7 @@ export async function GET(req) {
     authUrl.searchParams.append('scope', 'listings_r listings_w transactions_r email_r shops_r');
     authUrl.searchParams.append('client_id', 'zmldauxi8u7zz87qztr6l64x');
     authUrl.searchParams.append('state', state);
-    authUrl.searchParams.append('code_challenge', 'code_challenge');
+    authUrl.searchParams.append('code_challenge', codeChallenge);
     authUrl.searchParams.append('code_challenge_method', 'S256');
 
     return Response.redirect(authUrl.toString());
