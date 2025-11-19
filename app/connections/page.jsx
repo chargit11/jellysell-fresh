@@ -20,28 +20,40 @@ function ConnectionsContent() {
     const success = searchParams.get('success');
     const error = searchParams.get('error');
 
-    if (success === 'ebay_connected' || error) {
+    if (success || error) {
       // Remove URL params and refresh connection status
       window.history.replaceState({}, '', '/connections');
       checkConnections();
       
       // Trigger Chrome extension to sync data automatically
       if (success === 'ebay_connected') {
-        triggerExtensionSync();
+        triggerExtensionSync('ebay');
+      } else if (success === 'etsy_connected') {
+        triggerExtensionSync('etsy');
+      }
+
+      // Show success/error message
+      if (success === 'ebay_connected') {
+        alert('eBay connected successfully!');
+      } else if (success === 'etsy_connected') {
+        alert('Etsy connected successfully!');
+      } else if (error) {
+        alert(`Connection failed: ${error}`);
       }
     } else {
       checkConnections();
     }
   }, [searchParams]);
 
-  const triggerExtensionSync = async () => {
+  const triggerExtensionSync = async (platform) => {
     try {
-      // Send message to Chrome extension to sync eBay data
+      // Send message to Chrome extension to sync data
       if (typeof chrome !== 'undefined' && chrome.runtime) {
         await chrome.runtime.sendMessage('eopdegaaaehcnlkeiidkflahpffhmhmd', { 
-          action: 'syncData' 
+          action: 'syncData',
+          platform: platform
         });
-        console.log('✓ Extension sync triggered');
+        console.log(`✓ ${platform} extension sync triggered`);
       }
     } catch (error) {
       console.log('Extension not installed or unavailable:', error.message);
@@ -56,17 +68,33 @@ function ConnectionsContent() {
         return;
       }
 
-      const response = await fetch('/api/ebay/check-connection', {
+      // Check eBay connection
+      const ebayResponse = await fetch('/api/ebay/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id })
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      if (ebayResponse.ok) {
+        const data = await ebayResponse.json();
         setConnections(prev => ({
           ...prev,
           ebay: data.connected || false
+        }));
+      }
+
+      // Check Etsy connection
+      const etsyResponse = await fetch('/api/etsy/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id })
+      });
+
+      if (etsyResponse.ok) {
+        const data = await etsyResponse.json();
+        setConnections(prev => ({
+          ...prev,
+          etsy: data.connected || false
         }));
       }
 
@@ -78,50 +106,51 @@ function ConnectionsContent() {
   };
 
   const handleConnect = async (platform) => {
-    if (platform !== 'ebay') {
-      alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
+    const user_id = localStorage.getItem('user_id');
+    
+    if (!user_id) {
+      alert('Please login first');
+      window.location.href = '/login';
       return;
     }
 
-    try {
-      const user_id = localStorage.getItem('user_id');
-      
-      if (!user_id) {
-        alert('Please login first');
-        window.location.href = '/login';
-        return;
+    if (platform === 'ebay') {
+      try {
+        const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
+        const redirectUri = encodeURIComponent('https://jellysell.com/api/ebay/callback');
+        
+        const state = JSON.stringify({ 
+          user_id, 
+          random: Math.random().toString(36).substring(7) 
+        });
+        const encodedState = encodeURIComponent(state);
+        
+        const scopes = encodeURIComponent([
+          'https://api.ebay.com/oauth/api_scope',
+          'https://api.ebay.com/oauth/api_scope/sell.marketing',
+          'https://api.ebay.com/oauth/api_scope/sell.inventory',
+          'https://api.ebay.com/oauth/api_scope/sell.account',
+          'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+          'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly'
+        ].join(' '));
+        
+        const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${encodedState}&scope=${scopes}`;
+        
+        window.location.href = authUrl;
+      } catch (error) {
+        console.error('Error connecting eBay:', error);
+        alert('Error connecting eBay. Please try again.');
       }
-
-      const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
-      const redirectUri = encodeURIComponent('https://jellysell.com/api/ebay/callback');
-      
-      // Pass user_id in state so callback knows who to save tokens for
-      const state = JSON.stringify({ 
-        user_id, 
-        random: Math.random().toString(36).substring(7) 
-      });
-      const encodedState = encodeURIComponent(state);
-      
-      const scopes = encodeURIComponent([
-        'https://api.ebay.com/oauth/api_scope',
-        'https://api.ebay.com/oauth/api_scope/sell.marketing',
-        'https://api.ebay.com/oauth/api_scope/sell.inventory',
-        'https://api.ebay.com/oauth/api_scope/sell.account',
-        'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
-        'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly'
-      ].join(' '));
-      
-      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${encodedState}&scope=${scopes}`;
-      
-      window.location.href = authUrl;
-    } catch (error) {
-      console.error('Error connecting platform:', error);
-      alert('Error connecting platform. Please try again.');
+    } else if (platform === 'etsy') {
+      // Redirect to Etsy OAuth
+      window.location.href = `/api/etsy/auth?user_id=${user_id}`;
+    } else {
+      alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
     }
   };
 
   const handleDisconnect = async (platform) => {
-    if (platform !== 'ebay') {
+    if (platform !== 'ebay' && platform !== 'etsy') {
       return;
     }
 
@@ -132,7 +161,7 @@ function ConnectionsContent() {
     try {
       const user_id = localStorage.getItem('user_id');
       
-      const response = await fetch('/api/ebay/disconnect', {
+      const response = await fetch(`/api/${platform}/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id })
@@ -142,6 +171,7 @@ function ConnectionsContent() {
 
       if (response.ok && data.success) {
         setConnections(prev => ({ ...prev, [platform]: false }));
+        alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully!`);
       } else {
         alert(`Failed to disconnect ${platform}: ${data.error || 'Unknown error'}`);
       }
