@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -13,7 +15,6 @@ export async function POST(req) {
       return Response.json({ connected: false }, { status: 400 });
     }
 
-    // Check if user has Etsy tokens stored
     const { data, error } = await supabase
       .from('etsy_tokens')
       .select('access_token, refresh_token')
