@@ -30,6 +30,7 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [ebayConnected, setEbayConnected] = useState(false);
+  const [etsyConnected, setEtsyConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -51,11 +52,11 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchUser();
-    checkEbayConnection();
+    checkConnections();
   }, []);
 
   useEffect(() => {
-    if (ebayConnected) {
+    if (ebayConnected || etsyConnected) {
       fetchMessages();
       
       const autoRefreshInterval = setInterval(() => {
@@ -68,7 +69,7 @@ export default function MessagesPage() {
       setMessages([]);
       setLoading(false);
     }
-  }, [ebayConnected]);
+  }, [ebayConnected, etsyConnected]);
 
   useEffect(() => {
     filterMessages();
@@ -86,14 +87,23 @@ export default function MessagesPage() {
     
     const refreshConversation = async () => {
       console.log('🔄 Auto-refreshing conversation...');
+      const platform = selectedMessage.platform || 'ebay';
+      const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+      const senderField = platform === 'etsy' ? 'buyer_username' : 'sender';
+      
       const { data, error } = await supabase
-        .from('ebay_messages')
+        .from(table)
         .select('*')
-        .eq('sender', selectedMessage.sender)
+        .eq(senderField, selectedMessage.sender)
         .order('created_at', { ascending: true });
       
       if (!error && data) {
-        setConversationMessages(data);
+        const normalizedData = data.map(msg => ({
+          ...msg,
+          platform,
+          sender: platform === 'etsy' ? msg.buyer_username : msg.sender
+        }));
+        setConversationMessages(normalizedData);
       }
     };
     
@@ -101,30 +111,47 @@ export default function MessagesPage() {
     return () => clearInterval(interval);
   }, [selectedMessage]);
 
-  const checkEbayConnection = async () => {
+  const checkConnections = async () => {
     try {
       const user_id = localStorage.getItem('user_id');
       if (!user_id) {
         setEbayConnected(false);
+        setEtsyConnected(false);
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/ebay/check-connection', {
+      // Check eBay connection
+      const ebayResponse = await fetch('/api/ebay/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id })
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      if (ebayResponse.ok) {
+        const data = await ebayResponse.json();
         setEbayConnected(data.connected || false);
       } else {
         setEbayConnected(false);
       }
+
+      // Check Etsy connection
+      const etsyResponse = await fetch('/api/etsy/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id })
+      });
+
+      if (etsyResponse.ok) {
+        const data = await etsyResponse.json();
+        setEtsyConnected(data.connected || false);
+      } else {
+        setEtsyConnected(false);
+      }
     } catch (error) {
-      console.error('Error checking eBay connection:', error);
+      console.error('Error checking connections:', error);
       setEbayConnected(false);
+      setEtsyConnected(false);
     }
   };
 
@@ -134,26 +161,52 @@ export default function MessagesPage() {
   };
 
   const fetchMessages = async () => {
-    const { data, error } = await supabase
-      .from('ebay_messages')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let allMessages = [];
 
-    if (error) {
-      console.error('Error fetching messages:', error);
-      setLoading(false);
-      return;
+    // Fetch eBay messages
+    if (ebayConnected) {
+      const { data: ebayData, error: ebayError } = await supabase
+        .from('ebay_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!ebayError && ebayData) {
+        const buyerMessages = ebayData.filter(msg => {
+          const sender = (msg.sender || '').toLowerCase();
+          const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
+          const isIncoming = msg.direction === 'incoming' || !msg.direction;
+          return isValidSender && isIncoming;
+        });
+
+        allMessages = [...allMessages, ...buyerMessages.map(msg => ({ ...msg, platform: 'ebay' }))];
+      }
     }
 
-    const buyerMessages = (data || []).filter(msg => {
-      const sender = (msg.sender || '').toLowerCase();
-      const isValidSender = sender !== 'ebay' && sender !== 'ebay user' && sender !== '' && sender !== 'unknown';
-      const isIncoming = msg.direction === 'incoming' || !msg.direction;
-      
-      return isValidSender && isIncoming;
-    });
+    // Fetch Etsy messages
+    if (etsyConnected) {
+      const { data: etsyData, error: etsyError } = await supabase
+        .from('etsy_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    setMessages(buyerMessages);
+      if (!etsyError && etsyData) {
+        const normalizedEtsyMessages = etsyData.map(msg => ({
+          ...msg,
+          platform: 'etsy',
+          sender: msg.buyer_username || msg.sender,
+          message_id: msg.message_id || msg.id,
+          subject: msg.subject || 'Etsy Message',
+          body: msg.body || msg.message
+        }));
+
+        allMessages = [...allMessages, ...normalizedEtsyMessages];
+      }
+    }
+
+    // Sort all messages by date
+    allMessages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    setMessages(allMessages);
     setLoading(false);
   };
 
@@ -162,7 +215,13 @@ export default function MessagesPage() {
     try {
       if (typeof window !== 'undefined' && window.chrome && window.chrome.runtime) {
         try {
-          window.postMessage({ type: 'JELLYSELL_SYNC_MESSAGES' }, '*');
+          // Trigger sync for both platforms
+          if (ebayConnected) {
+            window.postMessage({ type: 'JELLYSELL_SYNC_MESSAGES' }, '*');
+          }
+          if (etsyConnected) {
+            window.postMessage({ type: 'JELLYSELL_SYNC_ETSY_MESSAGES' }, '*');
+          }
           
           console.log('Sync triggered via extension');
           
@@ -213,10 +272,11 @@ export default function MessagesPage() {
     const groupedBySender = {};
     filtered.forEach(msg => {
       const sender = msg.sender || 'Unknown';
-      if (!groupedBySender[sender] || new Date(msg.created_at) > new Date(groupedBySender[sender].created_at)) {
-        groupedBySender[sender] = {
+      const key = `${msg.platform}-${sender}`;
+      if (!groupedBySender[key] || new Date(msg.created_at) > new Date(groupedBySender[key].created_at)) {
+        groupedBySender[key] = {
           ...msg,
-          message_count: filtered.filter(m => m.sender === sender).length
+          message_count: filtered.filter(m => m.sender === sender && m.platform === msg.platform).length
         };
       }
     });
@@ -231,10 +291,14 @@ export default function MessagesPage() {
   };
 
   const openConversation = async (message) => {
+    const platform = message.platform || 'ebay';
+    const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+    const senderField = platform === 'etsy' ? 'buyer_username' : 'sender';
+    
     const { data: allMessages, error } = await supabase
-      .from('ebay_messages')
+      .from(table)
       .select('*')
-      .eq('sender', message.sender)
+      .eq(senderField, message.sender)
       .order('created_at', { ascending: true });
     
     if (error) {
@@ -242,16 +306,22 @@ export default function MessagesPage() {
       return;
     }
     
-    setConversationMessages(allMessages || []);
+    const normalizedMessages = (allMessages || []).map(msg => ({
+      ...msg,
+      platform,
+      sender: platform === 'etsy' ? msg.buyer_username : msg.sender
+    }));
+    
+    setConversationMessages(normalizedMessages);
     setSelectedMessage(message);
 
-    const unreadMessageIds = (allMessages || []).filter(m => !m.read && m.direction === 'incoming').map(m => m.message_id);
+    const unreadMessageIds = normalizedMessages.filter(m => !m.read && m.direction === 'incoming').map(m => m.message_id || m.id);
 
     if (unreadMessageIds.length > 0) {
       try {
-        await supabase.from('ebay_messages').update({ read: true }).in('message_id', unreadMessageIds);
+        await supabase.from(table).update({ read: true }).in(platform === 'etsy' ? 'id' : 'message_id', unreadMessageIds);
         setMessages(prev => prev.map(msg => 
-          unreadMessageIds.includes(msg.message_id) ? { ...msg, read: true } : msg
+          unreadMessageIds.includes(msg.message_id || msg.id) ? { ...msg, read: true } : msg
         ));
       } catch (error) {
         console.error('Error marking messages as read:', error);
@@ -273,52 +343,77 @@ export default function MessagesPage() {
         return;
       }
 
-      let incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
-      
-      if (!incomingMessageWithItem) {
-        const incomingMessage = conversationMessages.find(m => m.direction === 'incoming');
-        if (incomingMessage) {
-          const extractedItemId = extractItemIdFromText(incomingMessage.subject) || extractItemIdFromText(incomingMessage.body);
-          if (extractedItemId) {
-            console.log('Extracted item ID from text:', extractedItemId);
-            incomingMessageWithItem = { ...incomingMessage, item_id: extractedItemId };
+      const platform = selectedMessage.platform || 'ebay';
+
+      if (platform === 'ebay') {
+        let incomingMessageWithItem = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
+        
+        if (!incomingMessageWithItem) {
+          const incomingMessage = conversationMessages.find(m => m.direction === 'incoming');
+          if (incomingMessage) {
+            const extractedItemId = extractItemIdFromText(incomingMessage.subject) || extractItemIdFromText(incomingMessage.body);
+            if (extractedItemId) {
+              console.log('Extracted item ID from text:', extractedItemId);
+              incomingMessageWithItem = { ...incomingMessage, item_id: extractedItemId };
+            }
           }
         }
-      }
-      
-      if (!incomingMessageWithItem || !incomingMessageWithItem.item_id) {
-        alert('Cannot reply: No item ID found for this conversation');
-        setIsSending(false);
-        return;
-      }
+        
+        if (!incomingMessageWithItem || !incomingMessageWithItem.item_id) {
+          alert('Cannot reply: No item ID found for this conversation');
+          setIsSending(false);
+          return;
+        }
 
-      const response = await fetch('/api/messages/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipient: selectedMessage.sender,
-          body: replyText,
-          itemId: incomingMessageWithItem.item_id,
-          user_id: userId
-        })
-      });
+        const response = await fetch('/api/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: selectedMessage.sender,
+            body: replyText,
+            itemId: incomingMessageWithItem.item_id,
+            user_id: userId
+          })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        if (data.shouldOpenEbay || data.isEndedItem) {
-          const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply.`);
-          if (shouldOpen) {
-            window.open('https://mesg.ebay.com/mesgweb/ViewMessages', '_blank');
+        if (!response.ok) {
+          if (data.shouldOpenEbay || data.isEndedItem) {
+            const shouldOpen = confirm(`${data.error}\n\nClick OK to open eBay Messages where you can reply.`);
+            if (shouldOpen) {
+              window.open('https://mesg.ebay.com/mesgweb/ViewMessages', '_blank');
+            }
+          } else {
+            alert(`Failed to send message: ${data.error || 'Unknown error'}`);
           }
-        } else {
+          return;
+        }
+
+        setConversationMessages(prev => [...prev, { ...data.data, platform: 'ebay' }]);
+        setReplyText('');
+      } else if (platform === 'etsy') {
+        // Etsy reply logic
+        const response = await fetch('/api/etsy/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: selectedMessage.sender,
+            body: replyText,
+            user_id: userId
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
           alert(`Failed to send message: ${data.error || 'Unknown error'}`);
+          return;
         }
-        return;
-      }
 
-      setConversationMessages(prev => [...prev, data.data]);
-      setReplyText('');
+        setConversationMessages(prev => [...prev, { ...data.data, platform: 'etsy' }]);
+        setReplyText('');
+      }
     } catch (error) {
       alert(`Failed to send message: ${error.message}`);
     } finally {
@@ -328,10 +423,26 @@ export default function MessagesPage() {
 
   const handleTrash = async () => {
     if (selectedMessages.length === 0) return;
+    
+    const messagesByPlatform = selectedMessages.reduce((acc, msgId) => {
+      const msg = messages.find(m => (m.message_id || m.id) === msgId);
+      if (msg) {
+        const platform = msg.platform || 'ebay';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(msgId);
+      }
+      return acc;
+    }, {});
+
     try {
-      await supabase.from('ebay_messages').update({ deleted: true }).in('message_id', selectedMessages);
+      for (const [platform, ids] of Object.entries(messagesByPlatform)) {
+        const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+        const idField = platform === 'etsy' ? 'id' : 'message_id';
+        await supabase.from(table).update({ deleted: true }).in(idField, ids);
+      }
+      
       setMessages(prev => prev.map(msg => 
-        selectedMessages.includes(msg.message_id) ? { ...msg, deleted: true } : msg
+        selectedMessages.includes(msg.message_id || msg.id) ? { ...msg, deleted: true } : msg
       ));
       setSelectedMessages([]);
     } catch (error) {
@@ -341,10 +452,26 @@ export default function MessagesPage() {
 
   const handleMarkUnread = async () => {
     if (selectedMessages.length === 0) return;
+    
+    const messagesByPlatform = selectedMessages.reduce((acc, msgId) => {
+      const msg = messages.find(m => (m.message_id || m.id) === msgId);
+      if (msg) {
+        const platform = msg.platform || 'ebay';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(msgId);
+      }
+      return acc;
+    }, {});
+
     try {
-      await supabase.from('ebay_messages').update({ read: false }).in('message_id', selectedMessages);
+      for (const [platform, ids] of Object.entries(messagesByPlatform)) {
+        const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+        const idField = platform === 'etsy' ? 'id' : 'message_id';
+        await supabase.from(table).update({ read: false }).in(idField, ids);
+      }
+      
       setMessages(prev => prev.map(msg => 
-        selectedMessages.includes(msg.message_id) ? { ...msg, read: false } : msg
+        selectedMessages.includes(msg.message_id || msg.id) ? { ...msg, read: false } : msg
       ));
       setSelectedMessages([]);
     } catch (error) {
@@ -354,10 +481,26 @@ export default function MessagesPage() {
 
   const handleMarkRead = async () => {
     if (selectedMessages.length === 0) return;
+    
+    const messagesByPlatform = selectedMessages.reduce((acc, msgId) => {
+      const msg = messages.find(m => (m.message_id || m.id) === msgId);
+      if (msg) {
+        const platform = msg.platform || 'ebay';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(msgId);
+      }
+      return acc;
+    }, {});
+
     try {
-      await supabase.from('ebay_messages').update({ read: true }).in('message_id', selectedMessages);
+      for (const [platform, ids] of Object.entries(messagesByPlatform)) {
+        const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+        const idField = platform === 'etsy' ? 'id' : 'message_id';
+        await supabase.from(table).update({ read: true }).in(idField, ids);
+      }
+      
       setMessages(prev => prev.map(msg => 
-        selectedMessages.includes(msg.message_id) ? { ...msg, read: true } : msg
+        selectedMessages.includes(msg.message_id || msg.id) ? { ...msg, read: true } : msg
       ));
       setSelectedMessages([]);
     } catch (error) {
@@ -367,10 +510,26 @@ export default function MessagesPage() {
 
   const handleRestore = async () => {
     if (selectedMessages.length === 0) return;
+    
+    const messagesByPlatform = selectedMessages.reduce((acc, msgId) => {
+      const msg = messages.find(m => (m.message_id || m.id) === msgId);
+      if (msg) {
+        const platform = msg.platform || 'ebay';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(msgId);
+      }
+      return acc;
+    }, {});
+
     try {
-      await supabase.from('ebay_messages').update({ deleted: false }).in('message_id', selectedMessages);
+      for (const [platform, ids] of Object.entries(messagesByPlatform)) {
+        const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+        const idField = platform === 'etsy' ? 'id' : 'message_id';
+        await supabase.from(table).update({ deleted: false }).in(idField, ids);
+      }
+      
       setMessages(prev => prev.map(msg => 
-        selectedMessages.includes(msg.message_id) ? { ...msg, deleted: false } : msg
+        selectedMessages.includes(msg.message_id || msg.id) ? { ...msg, deleted: false } : msg
       ));
       setSelectedMessages([]);
     } catch (error) {
@@ -382,9 +541,24 @@ export default function MessagesPage() {
     if (selectedMessages.length === 0) return;
     if (!confirm('Permanently delete these messages? This cannot be undone.')) return;
 
+    const messagesByPlatform = selectedMessages.reduce((acc, msgId) => {
+      const msg = messages.find(m => (m.message_id || m.id) === msgId);
+      if (msg) {
+        const platform = msg.platform || 'ebay';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(msgId);
+      }
+      return acc;
+    }, {});
+
     try {
-      await supabase.from('ebay_messages').delete().in('message_id', selectedMessages);
-      setMessages(prev => prev.filter(msg => !selectedMessages.includes(msg.message_id)));
+      for (const [platform, ids] of Object.entries(messagesByPlatform)) {
+        const table = platform === 'etsy' ? 'etsy_messages' : 'ebay_messages';
+        const idField = platform === 'etsy' ? 'id' : 'message_id';
+        await supabase.from(table).delete().in(idField, ids);
+      }
+      
+      setMessages(prev => prev.filter(msg => !selectedMessages.includes(msg.message_id || msg.id)));
       setSelectedMessages([]);
     } catch (error) {
       alert('Failed to delete messages permanently');
@@ -401,6 +575,9 @@ export default function MessagesPage() {
   ];
 
   const getConversationItemId = () => {
+    const platform = selectedMessage?.platform || 'ebay';
+    if (platform === 'etsy') return true; // Etsy doesn't need item ID
+    
     const msgWithItemId = conversationMessages.find(m => m.direction === 'incoming' && m.item_id);
     if (msgWithItemId) return msgWithItemId.item_id;
     
@@ -414,6 +591,17 @@ export default function MessagesPage() {
 
   const canReply = !!getConversationItemId();
 
+  const getPlatformLogo = (platform) => {
+    if (platform === 'etsy') {
+      return 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Etsy_logo.svg/2560px-Etsy_logo.svg.png';
+    }
+    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png';
+  };
+
+  const getPlatformName = (platform) => {
+    return platform === 'etsy' ? 'Etsy' : 'eBay';
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
@@ -425,14 +613,14 @@ export default function MessagesPage() {
     );
   }
 
-  if (!ebayConnected) {
+  if (!ebayConnected && !etsyConnected) {
     return (
       <div className="flex min-h-screen max-w-full bg-gray-50 overflow-hidden">
         <div className="fixed left-0 top-0 h-screen"><Sidebar /></div>
         <div className={`flex-1 flex items-center justify-center transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Connect Your eBay Account</h2>
-            <p className="text-gray-600 mb-6">Connect your eBay account to view and send messages</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Connect Your Accounts</h2>
+            <p className="text-gray-600 mb-6">Connect your eBay or Etsy account to view and send messages</p>
             <Link href="/connections" className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors">
               Go to Connections
             </Link>
@@ -458,7 +646,7 @@ export default function MessagesPage() {
               Back
             </button>
             <div className="flex items-center gap-3">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png" alt="eBay" className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200" />
+              <img src={getPlatformLogo(selectedMessage.platform)} alt={getPlatformName(selectedMessage.platform)} className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200" />
               <div>
                 <h2 className="font-semibold text-gray-900">{selectedMessage.sender}</h2>
                 <p className="text-sm text-gray-500">{selectedMessage.subject}</p>
@@ -470,8 +658,8 @@ export default function MessagesPage() {
             {conversationMessages.map((msg, index) => {
               const isOutgoing = msg.direction === 'outgoing';
               return (
-                <div key={msg.message_id || index} className={`flex gap-3 max-w-full ${isOutgoing ? 'flex-row-reverse' : ''}`}>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png" alt={isOutgoing ? "You" : "Buyer"} className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0" />
+                <div key={msg.message_id || msg.id || index} className={`flex gap-3 max-w-full ${isOutgoing ? 'flex-row-reverse' : ''}`}>
+                  <img src={getPlatformLogo(msg.platform)} alt={isOutgoing ? "You" : "Buyer"} className="w-8 h-8 rounded-full object-contain bg-white p-1 border border-gray-200 flex-shrink-0" />
                   <div className={`flex-1 max-w-2xl min-w-0 ${isOutgoing ? 'flex flex-col items-end' : ''}`}>
                     <div className={`rounded-lg p-4 shadow-sm break-words ${isOutgoing ? 'bg-purple-600 text-white' : 'bg-white'}`}>
                       {msg.subject && !isOutgoing && <p className="font-semibold text-sm text-gray-700 mb-2 break-words">{msg.subject}</p>}
@@ -516,12 +704,12 @@ export default function MessagesPage() {
             ) : (
               <div className="flex gap-4 max-w-full">
                 <a 
-                  href="https://mesg.ebay.com/mesgweb/ViewMessages"
+                  href={selectedMessage.platform === 'etsy' ? 'https://www.etsy.com/your/conversations' : 'https://mesg.ebay.com/mesgweb/ViewMessages'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg text-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer"
                 >
-                  <p className="text-sm font-medium">Reply on eBay.com →</p>
+                  <p className="text-sm font-medium">Reply on {getPlatformName(selectedMessage.platform)}.com →</p>
                 </a>
                 <button disabled className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed h-fit">Send</button>
               </div>
@@ -577,7 +765,7 @@ export default function MessagesPage() {
 
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-3">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0} onChange={(e) => { setSelectedMessages(e.target.checked ? filteredMessages.map(m => m.message_id) : []); }} />
+                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0} onChange={(e) => { setSelectedMessages(e.target.checked ? filteredMessages.map(m => m.message_id || m.id) : []); }} />
                 {currentFilter === 'trash' ? (
                   <>
                     <button onClick={handleRestore} disabled={selectedMessages.length === 0} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>Restore</button>
@@ -598,14 +786,15 @@ export default function MessagesPage() {
                 ) : (
                   <div className="divide-y divide-gray-200">
                     {filteredMessages.map((message) => (
-                      <div key={message.message_id} className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer ${!message.read ? 'bg-purple-50' : ''}`} onClick={() => openConversation(message)}>
-                        <input type="checkbox" checked={selectedMessages.includes(message.message_id)} onChange={(e) => { e.stopPropagation(); toggleSelectMessage(message.message_id); }} onClick={(e) => e.stopPropagation()} className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png" alt="eBay" className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200" />
+                      <div key={message.message_id || message.id} className={`flex items-start gap-4 px-8 py-4 hover:bg-gray-50 cursor-pointer ${!message.read ? 'bg-purple-50' : ''}`} onClick={() => openConversation(message)}>
+                        <input type="checkbox" checked={selectedMessages.includes(message.message_id || message.id)} onChange={(e) => { e.stopPropagation(); toggleSelectMessage(message.message_id || message.id); }} onClick={(e) => e.stopPropagation()} className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600" />
+                        <img src={getPlatformLogo(message.platform)} alt={getPlatformName(message.platform)} className="w-10 h-10 rounded-full object-contain bg-white p-1 border border-gray-200" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2 min-w-0">
-                              <p className={`text-gray-900 text-sm truncate ${!message.read ? 'font-bold' : 'font-semibold'}`}>{message.sender || 'eBay User'}</p>
+                              <p className={`text-gray-900 text-sm truncate ${!message.read ? 'font-bold' : 'font-semibold'}`}>{message.sender || 'Unknown User'}</p>
                               {message.message_count > 1 && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{message.message_count}</span>}
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">{getPlatformName(message.platform)}</span>
                             </div>
                             <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(message.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           </div>
