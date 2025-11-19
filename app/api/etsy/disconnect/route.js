@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -13,7 +15,6 @@ export async function POST(req) {
       return Response.json({ success: false, error: 'Missing user_id' }, { status: 400 });
     }
 
-    // Delete Etsy tokens
     const { error } = await supabase
       .from('etsy_tokens')
       .delete()
