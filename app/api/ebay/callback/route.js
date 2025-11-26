@@ -34,7 +34,7 @@ export async function GET(request) {
     }
 
     // Exchange authorization code for access token
-    const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
+    const clientId = 'Christia-JellySel-PRD-670a09687-06abd8bd';
     const clientSecret = process.env.EBAY_CLIENT_SECRET;
     const redirectUri = 'https://jellysell.com/api/ebay/callback';
 
