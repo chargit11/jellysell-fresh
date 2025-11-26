@@ -1,4 +1,4 @@
-// app/connections/page.jsx
+// app/connections/page.jsx - COMPLETE FILE WITH DEPOP WORKING
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -14,25 +14,22 @@ function ConnectionsContent() {
     mercari: false
   });
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    // Check for success/error messages from OAuth callback
     const success = searchParams.get('success');
     const error = searchParams.get('error');
 
     if (success || error) {
-      // Remove URL params and refresh connection status
       window.history.replaceState({}, '', '/connections');
       checkConnections();
       
-      // Trigger Chrome extension to sync data automatically
       if (success === 'ebay_connected') {
         triggerExtensionSync('ebay');
       } else if (success === 'etsy_connected') {
         triggerExtensionSync('etsy');
       }
 
-      // Show success/error message
       if (success === 'ebay_connected') {
         alert('eBay connected successfully!');
       } else if (success === 'etsy_connected') {
@@ -47,7 +44,6 @@ function ConnectionsContent() {
 
   const triggerExtensionSync = async (platform) => {
     try {
-      // Send message to Chrome extension to sync data
       if (typeof chrome !== 'undefined' && chrome.runtime) {
         await chrome.runtime.sendMessage('eopdegaaaehcnlkeiidkflahpffhmhmd', { 
           action: 'syncData',
@@ -68,34 +64,37 @@ function ConnectionsContent() {
         return;
       }
 
-      // Check eBay connection
+      // Check eBay
       const ebayResponse = await fetch('/api/ebay/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id })
       });
-
       if (ebayResponse.ok) {
         const data = await ebayResponse.json();
-        setConnections(prev => ({
-          ...prev,
-          ebay: data.connected || false
-        }));
+        setConnections(prev => ({ ...prev, ebay: data.connected || false }));
       }
 
-      // Check Etsy connection
+      // Check Etsy
       const etsyResponse = await fetch('/api/etsy/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id })
       });
-
       if (etsyResponse.ok) {
         const data = await etsyResponse.json();
-        setConnections(prev => ({
-          ...prev,
-          etsy: data.connected || false
-        }));
+        setConnections(prev => ({ ...prev, etsy: data.connected || false }));
+      }
+
+      // Check Depop
+      const depopResponse = await fetch('/api/depop/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id })
+      });
+      if (depopResponse.ok) {
+        const data = await depopResponse.json();
+        setConnections(prev => ({ ...prev, depop: data.connected || false }));
       }
 
       setLoading(false);
@@ -142,15 +141,74 @@ function ConnectionsContent() {
         alert('Error connecting eBay. Please try again.');
       }
     } else if (platform === 'etsy') {
-      // Redirect to Etsy OAuth
       window.location.href = `/api/etsy/auth?user_id=${user_id}`;
+    } else if (platform === 'depop') {
+      await connectDepop();
     } else {
       alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} integration coming soon!`);
     }
   };
 
+  const connectDepop = async () => {
+    try {
+      setSyncing(true);
+      
+      // Check extension installed
+      if (typeof chrome === 'undefined' || !chrome.runtime) {
+        alert('❌ JellySell Chrome extension not installed!\n\nPlease install the extension first.');
+        setSyncing(false);
+        return;
+      }
+
+      const user_id = localStorage.getItem('user_id');
+      
+      // Try to send message to extension
+      try {
+        const response = await chrome.runtime.sendMessage('eopdegaaaehcnlkeiidkflahpffhmhmd', {
+          action: 'syncDepopMessages',
+          userId: user_id
+        });
+
+        if (response && response.success) {
+          if (response.messageCount === 0) {
+            alert('✓ Depop connected!\n\nNo messages found. Make sure you have conversations in Depop.');
+          } else {
+            alert(`✓ Depop connected!\n\nSynced ${response.messageCount} messages.`);
+          }
+          await checkConnections();
+        } else {
+          const errorMsg = response?.error || 'Unknown error';
+          
+          if (errorMsg.includes('No Depop tab found')) {
+            const openDepop = confirm(
+              '❌ Please open Depop and login first!\n\n' +
+              '1. Click OK to open Depop\n' +
+              '2. Login to your account\n' +
+              '3. Come back here and click "Connect Depop" again'
+            );
+            
+            if (openDepop) {
+              window.open('https://www.depop.com/messages', '_blank');
+            }
+          } else {
+            alert('❌ Failed to sync Depop:\n\n' + errorMsg);
+          }
+        }
+      } catch (error) {
+        console.error('Extension communication error:', error);
+        alert('❌ Cannot communicate with extension.\n\nMake sure:\n1. Extension is installed\n2. Extension is enabled\n3. You are logged into Depop');
+      }
+
+      setSyncing(false);
+    } catch (error) {
+      console.error('Error connecting Depop:', error);
+      alert('Error: ' + error.message);
+      setSyncing(false);
+    }
+  };
+
   const handleDisconnect = async (platform) => {
-    if (platform !== 'ebay' && platform !== 'etsy') {
+    if (platform !== 'ebay' && platform !== 'etsy' && platform !== 'depop') {
       return;
     }
 
@@ -221,7 +279,6 @@ function ConnectionsContent() {
 
   const connectedCount = Object.values(connections).filter(Boolean).length;
   const totalPlatforms = platforms.length;
-  const allConnected = connectedCount === totalPlatforms;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -231,7 +288,16 @@ function ConnectionsContent() {
           <h1 className="text-lg font-semibold text-gray-900">Connections</h1>
         </div>
 
-        <div className="flex-1 p-4 overflow-hidden">
+        <div className="flex-1 p-4 overflow-auto">
+          {syncing && (
+            <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                <span className="text-sm font-medium text-blue-900">Syncing Depop messages...</span>
+              </div>
+            </div>
+          )}
+
           <div className="mb-3">
             <h2 className="text-xl font-bold text-gray-900 mb-1">Platform Connections</h2>
             <p className="text-gray-600 text-xs">Connect your shop to multiple marketplaces</p>
@@ -241,9 +307,6 @@ function ConnectionsContent() {
             <div className="bg-white rounded-lg border border-gray-200 p-2.5">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-xs font-medium text-gray-700">Connected Platforms</h3>
-                <svg className={`w-4 h-4 ${allConnected ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-gray-900">{connectedCount}</span>
@@ -254,9 +317,6 @@ function ConnectionsContent() {
             <div className="bg-white rounded-lg border border-gray-200 p-2.5">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-xs font-medium text-gray-700">Total Reach</h3>
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-gray-900">325k+</span>
@@ -295,16 +355,18 @@ function ConnectionsContent() {
                 {connections[platform.id] ? (
                   <button
                     onClick={() => handleDisconnect(platform.id)}
-                    className="w-full px-2 py-1.5 border border-red-600 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors"
+                    disabled={syncing && platform.id === 'depop'}
+                    className="w-full px-2 py-1.5 border border-red-600 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Disconnect
                   </button>
                 ) : (
                   <button
                     onClick={() => handleConnect(platform.id)}
-                    className="w-full px-2 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                    disabled={(syncing && platform.id === 'depop') || (platform.id !== 'ebay' && platform.id !== 'etsy' && platform.id !== 'depop')}
+                    className="w-full px-2 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Connect
+                    {syncing && platform.id === 'depop' ? 'Connecting...' : 'Connect'}
                   </button>
                 )}
               </div>
