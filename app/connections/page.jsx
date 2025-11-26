@@ -116,7 +116,7 @@ function ConnectionsContent() {
 
     if (platform === 'ebay') {
       try {
-        const clientId = 'Christia-JellySel-PRD-edec84694-300e7c9b';
+        const clientId = 'Christia-JellySel-PRD-670a09687-06abd8bd';
         const redirectUri = encodeURIComponent('https://jellysell.com/api/ebay/callback');
         
         const state = JSON.stringify({ 
