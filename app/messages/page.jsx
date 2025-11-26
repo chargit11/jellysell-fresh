@@ -794,7 +794,6 @@ export default function MessagesPage() {
                             <div className="flex items-center gap-2 min-w-0">
                               <p className={`text-gray-900 text-sm truncate ${!message.read ? 'font-bold' : 'font-semibold'}`}>{message.sender || 'Unknown User'}</p>
                               {message.message_count > 1 && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{message.message_count}</span>}
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">{getPlatformName(message.platform)}</span>
                             </div>
                             <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(message.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           </div>
