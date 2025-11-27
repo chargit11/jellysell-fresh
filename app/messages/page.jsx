@@ -23,6 +23,7 @@ export default function MessagesPage() {
   const [user, setUser] = useState(null);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [currentFilter, setCurrentFilter] = useState('inbox');
+  const [platformFilter, setPlatformFilter] = useState('all'); // 'all', 'ebay', 'etsy'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [conversationMessages, setConversationMessages] = useState([]);
@@ -73,7 +74,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     filterMessages();
-  }, [messages, currentFilter, searchQuery]);
+  }, [messages, currentFilter, platformFilter, searchQuery]);
 
   useEffect(() => {
     if (conversationMessages.length > 0) {
@@ -248,6 +249,11 @@ export default function MessagesPage() {
 
   const filterMessages = () => {
     let filtered = [...messages];
+
+    // Apply platform filter first
+    if (platformFilter !== 'all') {
+      filtered = filtered.filter(m => m.platform === platformFilter);
+    }
 
     if (currentFilter === 'trash') {
       filtered = filtered.filter(m => m.deleted === true);
@@ -566,12 +572,12 @@ export default function MessagesPage() {
   };
 
   const folders = [
-    { id: 'inbox', label: 'Inbox', count: messages.filter(m => m.deleted !== true).length },
+    { id: 'inbox', label: 'Inbox', count: messages.filter(m => m.deleted !== true && (platformFilter === 'all' || m.platform === platformFilter)).length },
     { id: 'sent', label: 'Sent', count: 0 },
-    { id: 'all', label: 'All', count: messages.filter(m => m.deleted !== true).length },
-    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read && m.deleted !== true).length },
+    { id: 'all', label: 'All', count: messages.filter(m => m.deleted !== true && (platformFilter === 'all' || m.platform === platformFilter)).length },
+    { id: 'unread', label: 'Unread', count: messages.filter(m => !m.read && m.deleted !== true && (platformFilter === 'all' || m.platform === platformFilter)).length },
     { id: 'spam', label: 'Spam', count: 0 },
-    { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true).length },
+    { id: 'trash', label: 'Trash', count: messages.filter(m => m.deleted === true && (platformFilter === 'all' || m.platform === platformFilter)).length },
   ];
 
   const getConversationItemId = () => {
@@ -600,6 +606,10 @@ export default function MessagesPage() {
 
   const getPlatformName = (platform) => {
     return platform === 'etsy' ? 'Etsy' : 'eBay';
+  };
+
+  const getMessageCountByPlatform = (platform) => {
+    return messages.filter(m => m.platform === platform && m.deleted !== true).length;
   };
 
   if (loading) {
@@ -754,6 +764,48 @@ export default function MessagesPage() {
 
           <div className="flex flex-1 overflow-hidden">
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+              {/* Platform Filter Tabs */}
+              <div className="px-4 py-4 border-b border-gray-200">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPlatformFilter('all')}
+                    className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                      platformFilter === 'all'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {ebayConnected && (
+                    <button
+                      onClick={() => setPlatformFilter('ebay')}
+                      className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                        platformFilter === 'ebay'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <img src={getPlatformLogo('ebay')} alt="eBay" className="w-4 h-4 object-contain" />
+                      <span className="text-xs">{getMessageCountByPlatform('ebay')}</span>
+                    </button>
+                  )}
+                  {etsyConnected && (
+                    <button
+                      onClick={() => setPlatformFilter('etsy')}
+                      className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                        platformFilter === 'etsy'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <img src={getPlatformLogo('etsy')} alt="Etsy" className="w-4 h-4 object-contain" />
+                      <span className="text-xs">{getMessageCountByPlatform('etsy')}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <nav className="flex-1 px-4 py-4 space-y-1">
                 {folders.map(folder => (
                   <button key={folder.id} onClick={() => setCurrentFilter(folder.id)} className={`w-full text-left px-4 py-2 rounded-lg font-semibold flex items-center justify-between ${currentFilter === folder.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}>
