@@ -33,11 +33,25 @@ export default function MessagesPage() {
   const [ebayConnected, setEbayConnected] = useState(false);
   const [etsyConnected, setEtsyConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const messagesEndRef = useRef(null);
+  const filterDropdownRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const savedCollapsed = localStorage.getItem('sidebar-collapsed');
@@ -764,48 +778,6 @@ export default function MessagesPage() {
 
           <div className="flex flex-1 overflow-hidden">
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-              {/* Platform Filter Tabs */}
-              <div className="px-4 py-4 border-b border-gray-200">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPlatformFilter('all')}
-                    className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      platformFilter === 'all'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {ebayConnected && (
-                    <button
-                      onClick={() => setPlatformFilter('ebay')}
-                      className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
-                        platformFilter === 'ebay'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <img src={getPlatformLogo('ebay')} alt="eBay" className="w-4 h-4 object-contain" />
-                      <span className="text-xs">{getMessageCountByPlatform('ebay')}</span>
-                    </button>
-                  )}
-                  {etsyConnected && (
-                    <button
-                      onClick={() => setPlatformFilter('etsy')}
-                      className={`flex-1 px-3 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
-                        platformFilter === 'etsy'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <img src={getPlatformLogo('etsy')} alt="Etsy" className="w-4 h-4 object-contain" />
-                      <span className="text-xs">{getMessageCountByPlatform('etsy')}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
               <nav className="flex-1 px-4 py-4 space-y-1">
                 {folders.map(folder => (
                   <button key={folder.id} onClick={() => setCurrentFilter(folder.id)} className={`w-full text-left px-4 py-2 rounded-lg font-semibold flex items-center justify-between ${currentFilter === folder.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -828,6 +800,68 @@ export default function MessagesPage() {
                     <button onClick={handleTrash} disabled={selectedMessages.length === 0} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>Trash</button>
                     <button onClick={handleMarkUnread} disabled={selectedMessages.length === 0} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>Mark Unread</button>
                     <button onClick={handleMarkRead} disabled={selectedMessages.length === 0} className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" /></svg>Mark Read</button>
+                    <div className="relative" ref={filterDropdownRef}>
+                      <button 
+                        onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filter
+                        {platformFilter !== 'all' && (
+                          <span className="ml-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">
+                            {platformFilter === 'ebay' ? 'eBay' : 'Etsy'}
+                          </span>
+                        )}
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {showFilterDropdown && (
+                        <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30 min-w-[150px]">
+                          <button
+                            onClick={() => {
+                              setPlatformFilter('all');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              platformFilter === 'all' ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-700'
+                            }`}
+                          >
+                            All Platforms
+                          </button>
+                          {ebayConnected && (
+                            <button
+                              onClick={() => {
+                                setPlatformFilter('ebay');
+                                setShowFilterDropdown(false);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 ${
+                                platformFilter === 'ebay' ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-700'
+                              }`}
+                            >
+                              <img src={getPlatformLogo('ebay')} alt="eBay" className="w-4 h-4 object-contain" />
+                              eBay
+                            </button>
+                          )}
+                          {etsyConnected && (
+                            <button
+                              onClick={() => {
+                                setPlatformFilter('etsy');
+                                setShowFilterDropdown(false);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 ${
+                                platformFilter === 'etsy' ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-700'
+                              }`}
+                            >
+                              <img src={getPlatformLogo('etsy')} alt="Etsy" className="w-4 h-4 object-contain" />
+                              Etsy
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
