@@ -13,6 +13,7 @@ export default function Listings() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [listingToEtsy, setListingToEtsy] = useState(null);
 
   useEffect(() => {
     const user_id = localStorage.getItem('user_id');
@@ -110,6 +111,59 @@ export default function Listings() {
       alert('Quantity updated successfully on eBay!');
     } catch (error) {
       alert('Error: ' + error.message);
+    }
+  };
+
+  const handleListOnEtsy = async (listing) => {
+    const user_id = localStorage.getItem('user_id');
+    
+    if (!user_id) {
+      alert('Please log in to list on Etsy');
+      return;
+    }
+
+    // Check if already listing this item
+    if (listingToEtsy === listing.listing_id) {
+      return;
+    }
+
+    setListingToEtsy(listing.listing_id);
+
+    try {
+      const response = await fetch('/api/etsy/create-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id,
+          listing_id: listing.listing_id,
+          title: listing.title,
+          price: listing.price,
+          quantity: listing.quantity || 1,
+          image: listing.image,
+          description: listing.description || listing.title
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert('Failed to list on Etsy: ' + data.error);
+        setListingToEtsy(null);
+        return;
+      }
+
+      // Update the listing to show it's now on Etsy
+      setListings(listings.map(l => 
+        l.listing_id === listing.listing_id 
+          ? { ...l, listed_on_etsy: true, etsy_listing_id: data.listing_id }
+          : l
+      ));
+
+      setListingToEtsy(null);
+      alert('Successfully listed on Etsy!');
+    } catch (error) {
+      alert('Error listing on Etsy: ' + error.message);
+      setListingToEtsy(null);
     }
   };
 
@@ -443,6 +497,39 @@ export default function Listings() {
                                 className="w-4 h-auto"
                               />
                             </div>
+                            <button
+                              onClick={() => handleListOnEtsy(listing)}
+                              disabled={listing.listed_on_etsy || listingToEtsy === listing.listing_id}
+                              className={`w-6 h-6 flex items-center justify-center rounded border transition-all ${
+                                listing.listed_on_etsy
+                                  ? 'bg-orange-50 border-orange-200 cursor-default'
+                                  : listingToEtsy === listing.listing_id
+                                  ? 'bg-gray-100 border-gray-200 cursor-wait'
+                                  : 'bg-gray-50 border-gray-300 hover:bg-orange-50 hover:border-orange-300 cursor-pointer'
+                              }`}
+                              title={
+                                listing.listed_on_etsy 
+                                  ? 'Listed on Etsy' 
+                                  : listingToEtsy === listing.listing_id
+                                  ? 'Listing on Etsy...'
+                                  : 'Click to list on Etsy'
+                              }
+                            >
+                              {listingToEtsy === listing.listing_id ? (
+                                <svg className="animate-spin h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                              ) : (
+                                <img 
+                                  src="https://upload.wikimedia.org/wikipedia/commons/8/89/Etsy_logo.svg" 
+                                  alt="Etsy" 
+                                  className={`w-4 h-auto ${
+                                    listing.listed_on_etsy ? 'opacity-100' : 'opacity-30'
+                                  }`}
+                                />
+                              )}
+                            </button>
                           </div>
                         </td>
                         <td className="px-4 py-4">
